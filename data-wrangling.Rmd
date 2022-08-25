@@ -1,7 +1,7 @@
 ---
-title: "raw-data-wrangling"
+title: "data-wrangling"
 author: "Maya Sollen-Norrlin"
-date: '2022-06-18'
+date: "2022-08-25"
 output: html_document
 ---
 
@@ -29,72 +29,29 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-loading libraries
+Loading libraries   
 ```{r}
+
 library(tidyverse)
-library(ggplot2)
-
-
-
-
-
-
-```
-read in eh calibration data
-```{r}
-
-cal.curve <- read.csv("K-calibration-curve-fresh.csv")
-
-
-cal.curve
-
-
-str(cal.curve)
-```
-
-
-renaming column 1 in the dataset as R didn't like the format
-```{r}
-
-cal.curve <- cal.curve %>%
-  rename(std.conc = ï..std..concentration..ppm.)
-
 
 ```
 
-plot the calbration curve
-```{r}
 
-cal.plot <- ggplot(data = cal.curve, aes(x = std.conc, y= reading)) +
-  geom_point()+
-  geom_smooth(method = lm, se= F, colour = "forestgreen") +
-  ylab("Photometer Reading") + xlab("Standard Concentration (ppm)") +
-  scale_colour_manual(values = c("cornflowerblue","darkgreen")) +
-  ggtitle("Calibration Curve Potassium Fresh Samples") +
-  theme(
-		# get rid of grid and colour background
-		# fill with nothing, black border
-		panel.background = element_rect(fill = NA, colour = 'black'),
-		panel.grid = element_blank(),
-		plot.title = element_text(hjust = 0.5))
-
-
-cal.plot
-
-```
 
 ```{r}
 
-mod <- lm(reading~std.conc, data = cal.curve)
 
-mod
 
-```
-```{r}
 
-intercept <- mod$coefficients[1]
 
-slope <- mod$coefficients[2]
+
+
+
+
+
+
+
+
 
 
 ```
@@ -102,40 +59,59 @@ slope <- mod$coefficients[2]
 
 
 ```{r}
-sample.readings <- read.csv("K-readings-fresh.csv")
 
 
-str(sample.readings)
-
-summary(sample.readings)
-```
-
-```{r}
-
-sample.concentrations <- vector(mode = "numeric", length = length(sample.readings$reading))
-sample.concentrations
 
 
-for (i in 1:length(sample.readings$reading)) {
-  K <- (sample.readings$reading - intercept)/slope
-  sample.concentrations[i] <- K[i]
-  
-}
 
 
-sample.concentrations
 
-sample.readings <- sample.readings %>%
-  add_column(K.ppm = sample.concentrations)
 
-sample.readings
+
+
+
+
+
+
 
 ```
+
 
 
 ```{r}
 
-write.csv(sample.readings, "K-results-fresh.csv", row.names = F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```
@@ -143,7 +119,20 @@ write.csv(sample.readings, "K-results-fresh.csv", row.names = F)
 
 
 
+```{r}
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+```
