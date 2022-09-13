@@ -40,19 +40,7 @@ library(tidyverse)
 
 ```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+chem_data <- read.csv("chemistry-data-raw.csv")
 
 ```
 
@@ -60,18 +48,7 @@ library(tidyverse)
 
 ```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
+str(chem_data)
 
 
 ```
@@ -79,17 +56,6 @@ library(tidyverse)
 
 
 ```{r}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
