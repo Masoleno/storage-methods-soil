@@ -40,18 +40,15 @@ library(tidyverse)
 
 ```{r}
 
+chem_data <- read.csv("chemistry-data-raw.csv")
+
+```
 
  
 
+```{r}
 
-
-
-
-
-
-
-
-
+str(chem_data)
 
 
 ```
@@ -60,19 +57,7 @@ library(tidyverse)
 
 ```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+chem_data$NO3.as.N..mg.l. <- as.numeric(chem_data$NO3.as.N..mg.l.)
 
 ```
 
@@ -80,38 +65,7 @@ library(tidyverse)
 
 ```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```
-
-
-
-```{r}
-
-
-
-
-
-
-
-
-
-
-
-
-
+chem_data$NO2.as.N...mg.l. <- as.numeric(chem_data$NO2.as.N...mg.l.)
 
 
 ```
@@ -122,16 +76,18 @@ library(tidyverse)
 ```{r}
 
 
+str(chem_data)
 
 
 
+```
 
 
 
+```{r}
 
 
-
-
+head(chem_data, 20)
 
 
 
