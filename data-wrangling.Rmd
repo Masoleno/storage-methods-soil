@@ -57,8 +57,7 @@ str(chem_data)
 
 ```{r}
 
-
-
+chem_data$NO3.as.N..mg.l. <- as.numeric(chem_data$NO3.as.N..mg.l.)
 
 ```
 
@@ -66,18 +65,7 @@ str(chem_data)
 
 ```{r}
 
-
-
-
-
-
-
-
-
-
-
-
-
+chem_data$NO2.as.N...mg.l. <- as.numeric(chem_data$NO2.as.N...mg.l.)
 
 
 ```
@@ -88,16 +76,18 @@ str(chem_data)
 ```{r}
 
 
+str(chem_data)
 
 
 
+```
 
 
 
+```{r}
 
 
-
-
+head(chem_data, 20)
 
 
 
