@@ -28,3 +28,11 @@ vignettes/*.pdf
 .Renviron
 data/
 results/
+
+
+#plots folder
+
+plots/
+
+#CSV files
+*.csv
