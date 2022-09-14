@@ -86,9 +86,126 @@ str(chem_data)
 
 ```{r}
 
+chem_data <- chem_data %>% 
+  rename(
+    weeks = Time..weeks.,
+  )
+  
 
-head(chem_data, 20)
+str(chem_data)
+  
+up_to7 <- filter(chem_data, weeks != 24)
+
+str(up_to7)
+
+
+head(up_to7, 20)
+
+tail(up_to7, 20)
+
+```
+
+
+
+
+```{r}
+
+complete.cases(up_to7)
 
 
 
 ```
+
+
+
+```{r}
+
+
+up_to7[!complete.cases(up_to7),]
+
+
+```
+
+
+
+
+
+```{r}
+
+up_to7 <- up_to7 %>%
+  drop_na()
+
+head(up_to7,20)
+
+```
+
+
+
+```{r}
+
+
+up_to7[!complete.cases(up_to7),]
+
+
+
+```
+
+```{r}
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+
+
+```
+
+
+```{r}
+
+
+
+
+
+```
+
+
+```{r}
+
+
+
+
+
+```
+ 
+ 
+```{r}
+
+
+
+
+
+```
+ 
+ 
+```{r}
+
+
+
+
+
+```
+ 
+ 
+ 
+ 
+ 
