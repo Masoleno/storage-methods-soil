@@ -129,7 +129,7 @@ up_to7[!complete.cases(up_to7),]
 
 
 
-
+Removing rows with NA's.
 ```{r}
 
 up_to7 <- up_to7 %>%
@@ -140,7 +140,7 @@ head(up_to7,20)
 ```
 
 
-
+Checking that all NA's are gone.
 ```{r}
 
 
@@ -149,12 +149,63 @@ up_to7[!complete.cases(up_to7),]
 
 
 ```
+Renaming columnsso they're easier to write in plot functions.
+```{r}
+
+up_to7 <- up_to7 %>% 
+  rename(
+   "NH4 (mg/l)" = NH4..mg.l.,
+   "TON (mg/l)" = TON.as.N...mg.l.,
+   "K (ppm)" = K..ppm.,
+   "NO2 (mg/l)" = NO2.as.N...mg.l.,
+   "NO3 (mg/l)" = NO3.as.N..mg.l.,
+   "Conductivity (mV)" = conductivity..mV.
+  )
+
+head(up_to7)
+
+
+```
+
+Creating a "Fresh" category for the time stamp 0 samples (e.g. the control).
+```{r}
+
+up_to7$Treatment[up_to7$weeks == 0] <- "Fresh"
+
+head(up_to7, 20)
+
+```
+
 
 ```{r}
 
 
+p <- ggplot(up_to7, aes(x = Treatment, y = `NH4 (mg/l)`, fill = as_factor(weeks))) +
+  geom_boxplot(alpha = 0.5) +
+  theme_bw(base_size = 15)
+
+p
 
 
+```
+
+
+```{r}
+
+chem_plots <- list()
+
+
+for(i in 6:ncol(up_to7)){
+  if (i > 12){break}
+  chem_plots <- ggplot(up_to7, aes(x = Treatment, y = up_to7[,i], fill = as_factor(weeks))) +
+          geom_boxplot(alpha = 0.5) +
+          theme_bw(base_size = 15) +
+          ylab(colnames(up_to7[i])) +
+          labs(fill = "Time (weeks)")
+  print((chem_plots))
+  ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
+  
+}
 
 
 ```
@@ -164,33 +215,18 @@ up_to7[!complete.cases(up_to7),]
 ```{r}
 
 
-
-
-
-```
-
-
-```{r}
-
-
-
-
+pdf()
 
 ```
 
 
-```{r}
 
-
-
-
-
-```
  
  
 ```{r}
 
 
+print(chem_plots[pH])
 
 
 
