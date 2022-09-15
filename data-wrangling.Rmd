@@ -40,7 +40,7 @@ library(tidyverse)
 
 ```{r}
 
-chem_data <- read.csv("chemistry-data-raw.csv")
+chem_data <- read.csv("chemistry-data-raw.csv", na.strings = c(""))
 
 ```
 
@@ -93,14 +93,22 @@ chem_data <- chem_data %>%
   
 
 str(chem_data)
+
+```
+
+```{r}
   
 up_to7 <- filter(chem_data, weeks != 24)
 
 str(up_to7)
+```
 
 
+```{r}
 head(up_to7, 20)
+```
 
+```{r}
 tail(up_to7, 20)
 
 ```
@@ -111,8 +119,6 @@ tail(up_to7, 20)
 ```{r}
 
 complete.cases(up_to7)
-
-
 
 ```
 
@@ -129,11 +135,11 @@ up_to7[!complete.cases(up_to7),]
 
 
 
-Removing rows with NA's.
+Removing rows with NA's, except in Note column.
 ```{r}
 
 up_to7 <- up_to7 %>%
-  drop_na()
+  drop_na(!Note)
 
 head(up_to7,20)
 
@@ -149,7 +155,7 @@ up_to7[!complete.cases(up_to7),]
 
 
 ```
-Renaming columnsso they're easier to write in plot functions.
+Renaming columns so they're easier to write in plot functions.
 ```{r}
 
 up_to7 <- up_to7 %>% 
@@ -182,7 +188,8 @@ head(up_to7, 20)
 
 p <- ggplot(up_to7, aes(x = Treatment, y = `NH4 (mg/l)`, fill = as_factor(weeks))) +
   geom_boxplot(alpha = 0.5) +
-  theme_bw(base_size = 15)
+  theme_bw(base_size = 15) +
+  labs(fill="Time (weeks)")
 
 p
 
@@ -197,25 +204,25 @@ chem_plots <- list()
 
 for(i in 6:ncol(up_to7)){
   if (i > 12){break}
-  chem_plots <- ggplot(up_to7, aes(x = Treatment, y = up_to7[,i], fill = as_factor(weeks))) +
+  chem_plots<- ggplot(up_to7, aes(x = Treatment, y = up_to7[,i], fill = as_factor(weeks))) +
           geom_boxplot(alpha = 0.5) +
           theme_bw(base_size = 15) +
           ylab(colnames(up_to7[i])) +
           labs(fill = "Time (weeks)")
-  print((chem_plots))
-  ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
+  print(chem_plots)
+  #ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
   
 }
 
 
+
 ```
 
 
 
 ```{r}
 
-
-pdf()
+library(gridExtra)
 
 ```
 
@@ -226,8 +233,7 @@ pdf()
 ```{r}
 
 
-print(chem_plots[pH])
-
+grid.arrange(grobs=chem_plots)
 
 
 ```
