@@ -210,7 +210,7 @@ for(i in 6:ncol(up_to7)){
           ylab(colnames(up_to7[i])) +
           labs(fill = "Time (weeks)")
   print(chem_plots)
-  #ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
+  ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
   
 }
 
@@ -222,7 +222,6 @@ for(i in 6:ncol(up_to7)){
 
 ```{r}
 
-library(gridExtra)
 
 ```
 
@@ -233,7 +232,6 @@ library(gridExtra)
 ```{r}
 
 
-grid.arrange(grobs=chem_plots)
 
 
 ```
