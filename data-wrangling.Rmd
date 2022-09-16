@@ -33,7 +33,8 @@ Loading libraries
 ```{r}
 
 library(tidyverse)
-
+library(gridExtra)
+library(ggpubr)
 ```
 
 
@@ -71,7 +72,11 @@ chem_data$NO2.as.N...mg.l. <- as.numeric(chem_data$NO2.as.N...mg.l.)
 ```
 
 
+```{r}
 
+chem_data$Time..weeks. <- as.factor(chem_data$Time..weeks.)
+
+```
 
 ```{r}
 
@@ -197,55 +202,35 @@ p
 ```
 
 
-```{r}
 
-chem_plots <- list()
+ 
+```{r}
 
 
 for(i in 6:ncol(up_to7)){
   if (i > 12){break}
-  chem_plots<- ggplot(up_to7, aes(x = Treatment, y = up_to7[,i], fill = as_factor(weeks))) +
+  plot_var_name <- str_c(c("ggplot", i), collapse = "_")
+  temp_plot <- ggplot(up_to7, aes_string(x = "Treatment", y = up_to7[,i], fill="weeks")) +
           geom_boxplot(alpha = 0.5) +
           theme_bw(base_size = 15) +
           ylab(colnames(up_to7[i])) +
           labs(fill = "Time (weeks)")
-  print(chem_plots)
-  ggsave(chem_plots, filename = paste0("Box_", i, ".png"))
+  assign(plot_var_name, temp_plot)
   
 }
 
-
-
-```
-
-
-
-```{r}
-
-
-```
-
-
-
- 
- 
-```{r}
-
-
-
-
 ```
  
  
 ```{r}
 
 
+combined_fig <- ggarrange(ggplot_6, ggplot_7, ggplot_8, ggplot_9, ggplot_10, ggplot_11, ggplot_12, common.legend = TRUE)
 
 
-
-```
+combined_fig
  
  
- 
+``` 
  
  
