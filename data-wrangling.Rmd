@@ -225,7 +225,7 @@ for(i in 6:ncol(up_to7)){
 ```{r}
 
 
-combined_fig <- ggarrange(ggplot_6, ggplot_7, ggplot_8, ggplot_9, ggplot_10, ggplot_11, ggplot_12, common.legend = TRUE)
+combined_fig <- ggarrange(ggplot_6, ggplot_7, ggplot_8, ggplot_9, ggplot_10, ggplot_11, ggplot_12, common.legend = TRUE, legend = "bottom")
 
 
 combined_fig
