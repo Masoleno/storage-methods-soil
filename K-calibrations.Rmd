@@ -1,5 +1,5 @@
 ---
-title: "raw-data-wrangling"
+title: "calculating K concentrations from calibration curve"
 author: "Maya Sollen-Norrlin"
 date: '2022-06-18'
 output: html_document
