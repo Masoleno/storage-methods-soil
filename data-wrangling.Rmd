@@ -198,6 +198,11 @@ tail(chem_data_filtered, 20)
 ```
 
 
+```{r}
+
+write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE)
+
+```
 
 
 
