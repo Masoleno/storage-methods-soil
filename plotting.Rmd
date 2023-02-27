@@ -53,7 +53,11 @@ glimpse(tidyData)
 summary(tidyData)
 
 ```
-
+```{r}
+tidyData$Weeks <- as.factor(tidyData$Weeks)
+glimpse(tidyData)
+```
+ 
 Renaming columns so they're easier to write.
 ```{r}
 
@@ -72,55 +76,45 @@ head(tidyData)
 
 
 ```
+
+
+## Make frequency historgrams
 ```{r}
 
-summary(tidyData)
-ncol(tidyData)
-```
-
-```{r}
-
-
-ggplot(tidyData, aes(`K (ppm)`)) +
-  geom_histogram(binwidth = 1)
-```
-
-```{r}
-
-
-p <- ggplot(tidyData, aes(x = Treatment, y = `K (ppm)`, fill = as.factor(Weeks))) +
-  geom_boxplot(alpha = 0.5) +
-  theme_bw(base_size = 15) +
-  labs(fill="Time (weeks)") 
-
-p
-
-
+for (i in 3:9) {
+  plot1 <- ggplot(tidyData, aes(tidyData[,i])) +
+    geom_histogram() +
+    labs(x = colnames(tidyData[i]))
+  print(plot1)
+  
+}
 ```
 
 
-Make boxplots
+## Make boxplots
 ```{r}
 
-
-for(i in 2:9){
-  plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = as.factor(Weeks))) +
+for(i in 3:9){
+  plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = Weeks)) +
           geom_boxplot(alpha = 0.5) + 
           ylab(colnames(tidyData[i])) +
           labs(fill = "Time (weeks)" ) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i])))
  print(plot)
- ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+ ggsave(file = paste0("boxplot_", colnames(`tidyData[i]`), ".png"), plot = plot)
 }
 
 #grid.arrange(grobs = plots, ncol = 2)
+
 ```
  
 ```{r}
 
-ggsave()
+
 ```
 
+## combine figs into one?
 ```{r}
 
 
@@ -131,23 +125,18 @@ combined_fig
  
  
 ``` 
- 
+
+
+##
 ```{r}
-ggplot_6
+
 
 ```
 
-possible other way to di it?
+
 ```{r}
 
-my_plots_list <- lapply(target_variables, function(each_variable) {
-  ggplot(df, aes_string(each_variable)) + # NOTE - aes_string rather than aes
-    geom_histogram(binwidth = 0.05) +
-    ggtitle(str_c("Distribution of ",each_variable)) +  # Title of the plot
-    geom_vline(xintercept = mean_val, color = "blue", lty = "dashed")
-})
 
-gridExtra::grid.arrange(grobs = my_plots_list, ncol = 2)
 
 
 ```
