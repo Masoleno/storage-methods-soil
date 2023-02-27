@@ -30,10 +30,65 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
+## Load libraries
+```{r}
+library(tidyverse)
+library(gridExtra)
+
+```
+
+## Read in data
+```{r}
+
+tidyData <- read.csv("chemistry-data-tidy.csv")
+
+```
+
+```{r}
+glimpse(tidyData)
+
+```
+```{r}
+
+summary(tidyData)
+
+```
+
+Renaming columns so they're easier to write.
+```{r}
+
+tidyData<- tidyData %>% 
+  rename(
+   "NH4 (mg/l)" = NH4..mg.l.,
+   "TON (mg/l)" = TON..mg.l.,
+   "K (ppm)" = K..ppm.,
+   "NO2 (mg/l)" = NO2..mg.l.,
+   "NO3 (mg/l)" = NO3..mg.l.,
+   "Conductivity (mV)" = Conductivity..mV.,
+   "Moisture (%)" = Moisture....
+  )
+
+head(tidyData)
+
+
+```
+```{r}
+
+summary(tidyData)
+ncol(tidyData)
+```
+
 ```{r}
 
 
-p <- ggplot(chem_data, aes(x = Treatment, y = `NH4 (mg/l)`, fill = weeks)) +
+ggplot(tidyData, aes(`K (ppm)`)) +
+  geom_histogram(binwidth = 1)
+```
+
+```{r}
+
+
+p <- ggplot(tidyData, aes(x = Treatment, y = `K (ppm)`, fill = as.factor(Weeks))) +
   geom_boxplot(alpha = 0.5) +
   theme_bw(base_size = 15) +
   labs(fill="Time (weeks)") 
@@ -44,25 +99,28 @@ p
 ```
 
 
- this currently doesn't work. 
+Make boxplots
 ```{r}
 
 
-for(i in 5:ncol(chem_data)){
-  if (i > 12){break}
-  plot_var_name <- str_c(c("ggplot", i), collapse = "_")
-  temp_plot <- ggplot(chem_data, aes(x = Treatment, y = chem_data[ ,i], fill= weeks)) +
-          geom_boxplot(alpha = 0.5) +
-          theme_bw(base_size = 15) +
-          ylab(colnames(chem_data[i])) +
-          labs(fill = "Time (weeks)")
-  assign(plot_var_name, temp_plot)
-  
+for(i in 2:9){
+  plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = as.factor(Weeks))) +
+          geom_boxplot(alpha = 0.5) + 
+          ylab(colnames(tidyData[i])) +
+          labs(fill = "Time (weeks)" ) +
+          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i])))
+ print(plot)
+ ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
 }
 
+#grid.arrange(grobs = plots, ncol = 2)
 ```
  
- 
+```{r}
+
+ggsave()
+```
+
 ```{r}
 
 
@@ -76,5 +134,20 @@ combined_fig
  
 ```{r}
 ggplot_6
+
+```
+
+possible other way to di it?
+```{r}
+
+my_plots_list <- lapply(target_variables, function(each_variable) {
+  ggplot(df, aes_string(each_variable)) + # NOTE - aes_string rather than aes
+    geom_histogram(binwidth = 0.05) +
+    ggtitle(str_c("Distribution of ",each_variable)) +  # Title of the plot
+    geom_vline(xintercept = mean_val, color = "blue", lty = "dashed")
+})
+
+gridExtra::grid.arrange(grobs = my_plots_list, ncol = 2)
+
 
 ```
