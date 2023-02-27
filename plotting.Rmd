@@ -105,7 +105,6 @@ for(i in 3:9){
  ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
 }
 
-#grid.arrange(grobs = plots, ncol = 2)
 
 ```
  
