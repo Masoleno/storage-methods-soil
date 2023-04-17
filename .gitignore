@@ -40,3 +40,8 @@ plots/
 *.png
 
 *.DS_Store
+
+# Excel files
+
+*.xlsx
+*.xlsxm

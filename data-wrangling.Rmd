@@ -9,25 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 Loading libraries   
 ```{r}
@@ -58,18 +39,16 @@ str(chem_data)
 
 ```{r}
 
-chem_data$NO3.as.N..mg.l. <- as.numeric(chem_data$NO3.as.N..mg.l.)
+chem_data <- chem_data %>%
+  mutate_at(c("NO3..mg.kg.", "NO2..mg.kg.", "K..mg.kg."), as.numeric)
 
 ```
-
-
-
 ```{r}
-
-chem_data$NO2.as.N...mg.l. <- as.numeric(chem_data$NO2.as.N...mg.l.)
-
+head(chem_data)
 
 ```
+
+
 
 
 ```{r}
@@ -78,18 +57,9 @@ chem_data$Time..weeks. <- as.factor(chem_data$Time..weeks.)
 
 ```
 
-```{R}
-
-chem_data$K..ppm. <- as.numeric(chem_data$K..ppm.)
-
-```
-
 ```{r}
 
-
 str(chem_data)
-
-
 
 ```
 
@@ -127,7 +97,6 @@ chem_data_filtered[!complete.cases(chem_data_filtered),]
 
 
 
-
 Removing rows with NA's
 ```{r}
 
@@ -152,16 +121,22 @@ chem_data_filtered[!complete.cases(chem_data_filtered),]
 
 
 ```
+
 Renaming columns so they're easier to write.
 ```{r}
 
+str(chem_data_filtered)
+
+```
+
+```{r}
 chem_data_filtered<- chem_data_filtered %>% 
   rename(
-   "NH4 (mg/l)" = NH4..mg.l.,
-   "TON (mg/l)" = TON.as.N...mg.l.,
-   "K (ppm)" = K..ppm.,
-   "NO2 (mg/l)" = NO2.as.N...mg.l.,
-   "NO3 (mg/l)" = NO3.as.N..mg.l.,
+   "NH4 (mg/kg)" = NH4..mg.kg.,
+   "TON (mg/kg)" = TON..mg.kg.,
+   "K (mg/kg)" = K..mg.kg.,
+   "NO2 (mg/kg)" = NO2..mg.kg.,
+   "NO3 (mg/kg)" = NO3..mg.kg.,
    "Conductivity (mV)" = conductivity..mV.,
    "Moisture (%)" = moisture....,
    "Weeks" = Time..weeks.
@@ -191,7 +166,7 @@ replacing negative values in the moisture and nitrate columns with 0.
 ```{r}
 
 chem_data_filtered <- chem_data_filtered%>% 
-  mutate(across(c(`Moisture (%)`, `NO3 (mg/l)`:`TON (mg/l)`), ~ ifelse(.x<0, 0, .x)))
+  mutate(across(c(`Moisture (%)`, `NO3 (mg/kg)`:`TON (mg/kg)`), ~ ifelse(.x<0, 0, .x)))
 
 
 tail(chem_data_filtered, 20)
