@@ -32,24 +32,69 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 ```{r}
 
-
-
-```
-
-```{r}
-
-
+library(psych)
+library(MASS)
+library(tidyverse)
+library(gridExtra)
 
 ```
 
 ```{r}
 
-
+head(tidyData)
 
 ```
 
 ```{r}
 
+shapiro.test(tidyData$`Moisture (%)`)
+
+```
+```{r}
+
+shapiro.test(tidyData$pH)
+
+```
+
+```{r}
+
+shapiro.test(tidyData$`Conductivity (mV)`)
+
+```
+```{r}
+
+shapiro.test(tidyData$`NO3 (mg/kg)`)
+
+```
+
+```{r}
+
+shapiro.test(tidyData$`NO2 (mg/kg)`)
+
+```
+
+```{r}
+
+shapiro.test(tidyData$`NH4 (mg/kg)`)
+
+```
+```{r}
+
+shapiro.test(tidyData$`TON (mg/kg)`)
+
+```
+
+```{r}
+
+shapiro.test(tidyData$`K (mg/kg)`)
+
+```
+
+```{r}
+
+tidyData %>% 
+  group_by(Treatment, Weeks) %>%
+  get_summary_stats(type = "mean_sd")
 
 
 ```
