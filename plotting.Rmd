@@ -62,7 +62,7 @@ head(tidyData)
 ## Make frequency historgrams
 ```{r}
 
-for (i in 3:9) {
+for (i in 2:9) {
   plot1 <- ggplot(tidyData, aes(tidyData[,i])) +
     geom_histogram() +
     labs(x = colnames(tidyData[i]))
@@ -75,7 +75,7 @@ for (i in 3:9) {
 ## Make boxplots
 ```{r}
 
-for(i in 3:9){
+for(i in 2:9){
   plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = Weeks)) +
           geom_boxplot(alpha = 0.5) + 
           ylab(colnames(tidyData[i])) +
