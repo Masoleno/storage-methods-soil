@@ -30,23 +30,25 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
+Load libraries
 ```{r}
 
-library(psych)
-library(MASS)
+#library(psych)
+#library(MASS)
 library(tidyverse)
 library(gridExtra)
 library(rstatix)
 library(car)
 
 ```
+Read in csv file created at the end of the data-wrangling script
 ```{r}
 
 tidyData <- read.csv("chemistry-data-tidy.csv")
 
 ```
 
-
+Look at the data
 ```{r}
 
 head(tidyData)
@@ -58,7 +60,7 @@ head(tidyData)
 str(tidyData)
 
 ```
-Renaming columns so they're easier to write.
+Rename columns so they're easier to write.
 ```{r}
 
 tidyData<- tidyData %>% 
@@ -76,7 +78,7 @@ head(tidyData)
 
 
 ```
-
+Convert to factors so that ANOVA and Tukey's work
 ```{r}
 tidyData$Weeks <- as.factor(tidyData$Weeks)
 
@@ -84,127 +86,223 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 ```
 
-
-Normality tests
 ```{r}
 
-shapiro.test(tidyData$pH)
+#tidyData %>% 
+ # group_by(Treatment, Weeks) %>%
+  #get_summary_stats(type = "mean_sd")
 
 ```
 
+Normality tests of raw data
 ```{r}
-
-shapiro.test(tidyData$`Conductivity (mV)`)
-
-```
-
-```{r}
-
-shapiro.test(tidyData$`NO3 (mg/kg)`)
-
-```
-
-```{r}
-
-shapiro.test(tidyData$`NO2 (mg/kg)`)
-
-```
-
-```{r}
-
-shapiro.test(tidyData$`NH4 (mg/kg)`)
-
-```
-
-```{r}
-
-shapiro.test(tidyData$`TON (mg/kg)`)
-
-```
-
-```{r}
-
-shapiro.test(tidyData$`K (mg/kg)`)
-
-```
-
-```{r}
-
-tidyData %>% 
-  group_by(Treatment, Weeks) %>%
-  get_summary_stats(type = "mean_sd")
-
-```
-
-```{r}
-
-pH_aov <- aov(pH ~ Treatment + Weeks, data = tidyData)
-
-```
-
-```{r}
-
-shapiro.test(pH_aov$residuals)
-
-```
-```{r}
-
-TukeyHSD(pH_aov)
-```
-
-```{r}
-
-par(mfrow = c(1,2))
-
-hist(pH_aov$residuals)
-qqPlot(pH_aov$residuals, id = FALSE)
-
-```
-
-
-
-```{r}
-
-for(i in 3:7){
-
-  column <- names(tidyData[i]) 
-
-  avz <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData) # Each ANOVA test iterating through each column of my dataframe
-  tukey <- TukeyHSD(aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData))
-
-  result <- summary(avz) # summarize each ANOVA in a table
-
+for (i in 3:9) {
+  column <- names(tidyData[i])
+  
+  shapiro1 <- shapiro.test(tidyData[,i])
   print(column)
-  print(result)
+  print(shapiro1)
+}
+
+
+```
+Levene's Test of Equal Variance for the raw data
+```{r}
+for (i in 3:9) {
+  column <- names(tidyData[i])
+  
+  levene <- leveneTest(tidyData[,i] ~ Treatment*Weeks, data = tidyData)
+  print(column)
+  print(levene)
+}
+
+
+```
+
+
+ANOVA and Tukey's, also testing residuals for normality and plotting residual histogram and QQ-plot
+```{r}
+
+for(i in 3:9) {
+  column <- names(tidyData[i])
+  
+  # Conduct ANOVA and store residuals
+  avz <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData)
+  residuals <- resid(avz)
+  
+  # Test normality of residuals using Shapiro-Wilks test
+  shapiro <- shapiro.test(residuals)
+  
+  
+  
+  # Conduct Tukey HSD post-hoc test
+  tukey <- TukeyHSD(avz)
+  
+  # Plot histogram and QQ plot of residuals
+  par(mfrow = c(1, 2))
+  hist(residuals, main = paste("Histogram of Residuals for", column))
+  qqnorm(residuals, main = paste("QQ Plot of Residuals for", column))
+  qqline(residuals)
+  
+  # Print results
+  cat("Column:", column, "\n")
+  cat("ANOVA:\n")
+  print(summary(avz))
+  cat("Shapiro-Wilk test for normality of residuals:\n")
+  print(shapiro)
+  cat("Tukey HSD post-hoc test:\n")
   print(tukey)
 }
 
 
 ```
-
-
-
-
+ANOVA loop saving only ANOVA results to file
 ```{r}
+# Create an empty data frame to store results
+results_df <- data.frame(Column = character(),
+                          F_value = numeric(),
+                          P_value = numeric(),
+                          Normality_p_value = numeric(),
+                          stringsAsFactors = FALSE)
 
-for (i in 3:7){
+for(i in 3:9) {
   column <- names(tidyData[i])
-  anova <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData)
-  tukey <- TukeyHSD(anova)
   
-    print(column)
-    print(setNames(tukey, column))
-
+  # Conduct ANOVA and store residuals
+  avz <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData)
+  residuals <- resid(avz)
+  
+  # Test normality of residuals using Shapiro-Wilk test
+  shapiro <- shapiro.test(residuals)
+  
+  # Conduct Tukey HSD post-hoc test
+  tukey <- TukeyHSD(avz)
+  
+  # Extract ANOVA results and store in a data frame
+  result <- summary(avz)
+  f_value <- result[[1]][1, 1]
+  p_value <- result[[1]][1, 5]
+  normality_p_value <- shapiro$p.value
+  row <- data.frame(Column = column, F_value = f_value, P_value = p_value,
+                    Normality_p_value = normality_p_value, stringsAsFactors = FALSE)
+  
+  # Append row to results data frame
+  results_df <- rbind(results_df, row)
+  
+  # Plot histogram and QQ plot of residuals
+  par(mfrow = c(1, 2))
+  hist(residuals, main = paste("Histogram of Residuals for", column))
+  qqnorm(residuals, main = paste("QQ Plot of Residuals for", column))
+  qqline(residuals)
+  
+  # Print results
+  cat("Column:", column, "\n")
+  cat("ANOVA:\n")
+  print(result)
+  cat("Shapiro-Wilk test for normality of residuals:\n")
+  print(shapiro)
+  cat("Tukey HSD post-hoc test:\n")
+  print(tukey)
 }
 
+# Save results data frame to a file
+write.csv(results_df, "results.csv", row.names = FALSE)
+
+
+
 ```
 
+
+ANOVA loop saving ANOVA & Tukey's results to files
+```{r}
+
+# Create an empty data frame to store results
+results_df <- data.frame(Column = character(),
+                          F_value = numeric(),
+                          P_value = numeric(),
+                          Normality_p_value = numeric(),
+                          stringsAsFactors = FALSE)
+
+# Create an empty data frame to store Tukey's test results
+tukey_df1 <- data.frame(Column = character(),
+                        Comparison = character(),
+                        Difference = numeric(),
+                        Tukey_P_value = numeric(),
+                        stringsAsFactors = FALSE)
+tukey_df2 <- data.frame(
+                        Comparison2 = character(),
+                        Difference2 = numeric(),
+                        Tukey_P_value2 = numeric(),
+                        stringsAsFactors = FALSE)
+
+for(i in 3:9) {
+  column <- names(tidyData[i])
+
+  # Conduct ANOVA and store residuals
+  avz <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData)
+  residuals <- resid(avz)
+  
+  # Test normality of residuals using Shapiro-Wilk test
+  shapiro <- shapiro.test(residuals)
+  
+  # Conduct Tukey HSD post-hoc test
+  tukey <- TukeyHSD(avz)
+  
+  # Extract ANOVA results and store in a data frame
+  result <- summary(avz)
+  f_value <- result[[1]][1, 1]
+  p_value <- result[[1]][1, 5]
+  normality_p_value <- shapiro$p.value
+  row <- data.frame(Column = column, F_value = f_value, P_value = p_value,
+                    Normality_p_value = normality_p_value, stringsAsFactors = FALSE)
+  
+  # Append row to results data frame
+  results_df <- rbind(results_df, row)
+  
+  # Extract Tukey's test results and store in a data frame
+   comparisons <- row.names(tukey[[1]])
+    for (j in 1:nrow(tukey[[1]])) {
+      comparison <- comparisons[j]
+      difference <- tukey[[1]][j, 1]
+      tukey_p_value <- tukey[[1]][j, 4]
+      tukey_row <- data.frame(Column = column,
+                               Comparison = comparison,
+                               Difference = difference,
+                               Tukey_P_value = tukey_p_value,
+                               stringsAsFactors = FALSE)
+      tukey_df1 <- rbind(tukey_df1, tukey_row)
+    }
+  comparisons2 <- row.names(tukey[[2]])
+  for (k in 1:nrow(tukey[[2]])) {
+    comparison2 <- comparisons2[k]
+    difference2 <- tukey[[2]][k, 1]
+    tukey_p_value2 <- tukey[[2]][k, 4]
+    tukey_row2 <- data.frame( 
+                              Comparison2 = comparison2,
+                              Difference2 = difference2,
+                              Tukey_P_value2 = tukey_p_value2,
+                              stringsAsFactors = FALSE)
+    tukey_df2 <- rbind(tukey_df2, tukey_row2)
+  }
+  tukey_results <- cbind(tukey_df1, tukey_df2)
+  # Plot histogram and QQ plot of residuals
+  par(mfrow = c(1, 2))
+  hist(residuals, main = paste("Histogram of Residuals for", column))
+  qqnorm(residuals, main = paste("QQ Plot of Residuals for", column))
+  qqline(residuals)
+}
+
+# Save results to file
+write.csv(results_df, file = "results.csv", row.names = FALSE)
+write.csv(tukey_results, file = "tukey_results.csv", row.names = FALSE)
+
+
+```
 
 
 ```{r}
 
 
 
-
-
 ```
+
