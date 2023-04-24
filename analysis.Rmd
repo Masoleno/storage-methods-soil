@@ -36,8 +36,16 @@ library(psych)
 library(MASS)
 library(tidyverse)
 library(gridExtra)
+library(rstatix)
+library(car)
 
 ```
+```{r}
+
+tidyData <- read.csv("chemistry-data-tidy.csv")
+
+```
+
 
 ```{r}
 
@@ -47,9 +55,37 @@ head(tidyData)
 
 ```{r}
 
-shapiro.test(tidyData$`Moisture (%)`)
+str(tidyData)
 
 ```
+Renaming columns so they're easier to write.
+```{r}
+
+tidyData<- tidyData %>% 
+  rename(
+   "NH4 (mg/kg)" = NH4..mg.kg.,
+   "TON (mg/kg)" = TON..mg.kg.,
+   "K (mg/kg)" = K..mg.kg.,
+   "NO2 (mg/kg)" = NO2..mg.kg.,
+   "NO3 (mg/kg)" = NO3..mg.kg.,
+   "Conductivity (mV)" = Conductivity..mV.,
+   "Moisture (%)" = Moisture....
+  )
+
+head(tidyData)
+
+
+```
+
+```{r}
+tidyData$Weeks <- as.factor(tidyData$Weeks)
+
+tidyData$Treatment <- as.factor(tidyData$Treatment)
+
+```
+
+
+Normality tests
 ```{r}
 
 shapiro.test(tidyData$pH)
@@ -61,6 +97,7 @@ shapiro.test(tidyData$pH)
 shapiro.test(tidyData$`Conductivity (mV)`)
 
 ```
+
 ```{r}
 
 shapiro.test(tidyData$`NO3 (mg/kg)`)
@@ -78,6 +115,7 @@ shapiro.test(tidyData$`NO2 (mg/kg)`)
 shapiro.test(tidyData$`NH4 (mg/kg)`)
 
 ```
+
 ```{r}
 
 shapiro.test(tidyData$`TON (mg/kg)`)
@@ -96,22 +134,76 @@ tidyData %>%
   group_by(Treatment, Weeks) %>%
   get_summary_stats(type = "mean_sd")
 
+```
+
+```{r}
+
+pH_aov <- aov(pH ~ Treatment + Weeks, data = tidyData)
 
 ```
 
 ```{r}
 
+shapiro.test(pH_aov$residuals)
 
+```
+```{r}
 
+TukeyHSD(pH_aov)
 ```
 
 ```{r}
 
+par(mfrow = c(1,2))
+
+hist(pH_aov$residuals)
+qqPlot(pH_aov$residuals, id = FALSE)
+
+```
+
+
+
+```{r}
+
+for(i in 3:7){
+
+  column <- names(tidyData[i]) 
+
+  avz <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData) # Each ANOVA test iterating through each column of my dataframe
+  tukey <- TukeyHSD(aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData))
+
+  result <- summary(avz) # summarize each ANOVA in a table
+
+  print(column)
+  print(result)
+  print(tukey)
+}
 
 
 ```
 
+
+
+
 ```{r}
+
+for (i in 3:7){
+  column <- names(tidyData[i])
+  anova <- aov(tidyData[,i] ~ Treatment + Weeks, data = tidyData)
+  tukey <- TukeyHSD(anova)
+  
+    print(column)
+    print(setNames(tukey, column))
+
+}
+
+```
+
+
+
+```{r}
+
+
 
 
 
