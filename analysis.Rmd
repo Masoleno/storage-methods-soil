@@ -94,25 +94,17 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 ```
 
-Normality tests of raw data
+Testing raw data for normality and equal variance
 ```{r}
 for (i in 3:9) {
   column <- names(tidyData[i])
   
   shapiro1 <- shapiro.test(tidyData[,i])
-  print(column)
-  print(shapiro1)
-}
-
-
-```
-Levene's Test of Equal Variance for the raw data
-```{r}
-for (i in 3:9) {
-  column <- names(tidyData[i])
   
   levene <- leveneTest(tidyData[,i] ~ Treatment*Weeks, data = tidyData)
+   
   print(column)
+  print(shapiro1)
   print(levene)
 }
 
