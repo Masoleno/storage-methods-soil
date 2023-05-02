@@ -294,7 +294,95 @@ write.csv(tukey_results, file = "tukey_results.csv", row.names = FALSE)
 
 ```{r}
 
+pH_data <- tidyData %>%
+  select(Sample.ID, pH, Treatment, Weeks) %>%
+  filter(Weeks != 0)
+  
+
+head(pH_data,20)
 
 
 ```
 
+```{r}
+
+str(pH_data)
+```
+```{r}
+
+pH_data$pH <- as.double(pH_data$pH)
+```
+
+```{r}
+
+str(pH_data)
+```
+
+```{r}
+
+pH_summary <- pH_data %>%
+  group_by(Treatment, Weeks,) %>%
+  get_summary_stats(pH, type = "mean_sd")
+data.frame(pH_summary)
+
+
+```
+
+
+```{r}
+
+long_data <- tidyData %>%
+  pivot_longer(cols = 3:9,
+               names_to = "Chemistry variable",
+               values_to = "Result")
+head(long_data)
+```
+
+```{r}
+
+pH_outlier <- pH_data %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(pH)
+data.frame(pH_outlier)
+
+```
+
+
+```{r}
+
+pH_normality <- pH_data %>%
+  group_by(Treatment, Weeks) %>%
+  shapiro_test(pH)
+data.frame(pH_normality)
+
+```
+
+```{r}
+ggplot(pH_data, aes(sample = pH), ggtheme = bw()) +
+  stat_qq() +
+  facet_grid(Treatment ~ Weeks)
+
+
+```
+
+
+```{r}
+res.aov <- pH_data %>%
+  anova_test(dv = pH, wid = Sample.ID,
+  within = c(Treatment, Weeks))
+
+get_anova_table(res.aov)
+
+```
+
+```{r}
+
+
+
+```
+
+```{r}
+
+
+
+```
