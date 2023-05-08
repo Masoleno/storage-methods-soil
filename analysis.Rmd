@@ -87,7 +87,21 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 str(tidyData)
 ```
+Turning data into long format (if necessary)
+```{r}
 
+longData <- tidyData %>%
+  dplyr::select(-2) %>%
+  pivot_longer(cols = 3:9,
+               names_to = "Chemistry variable",
+               values_to = "Result")
+
+#longData$Sample.ID <- paste(longData$Sample.ID, 1:nrow(longData), sep = "-")
+
+head(long_data)
+```
+
+Summary statistics
 ```{r}
 
 #tidyData %>% 
@@ -293,26 +307,16 @@ write.csv(tukey_results, file = "tukey_results.csv", row.names = FALSE)
 
 ```
 
-ANOVA on pH only
+MANOVA on pH only
 ```{r}
 
 pH_data <- tidyData %>%
-  select(Sample.ID, pH, Treatment, Weeks) %>%
-  filter(Weeks != 0)
+  select(Sample.ID, pH, Treatment, Weeks)
   
 
 head(pH_data,20)
 
 
-```
-
-```{r}
-
-str(pH_data)
-```
-```{r}
-
-pH_data$pH <- as.double(pH_data$pH)
 ```
 
 ```{r}
@@ -329,17 +333,7 @@ data.frame(pH_summary)
 
 
 ```
-
-
-```{r}
-
-long_data <- tidyData %>%
-  pivot_longer(cols = 3:9,
-               names_to = "Chemistry variable",
-               values_to = "Result")
-head(long_data)
-```
-
+Checking for outliers
 ```{r}
 
 pH_outlier <- pH_data %>%
@@ -351,15 +345,6 @@ data.frame(pH_outlier)
 
 
 ```{r}
-
-pH_normality <- pH_data %>%
-  group_by(Treatment, Weeks) %>%
-  shapiro_test(pH)
-data.frame(pH_normality)
-
-```
-
-```{r}
 ggplot(pH_data, aes(sample = pH), ggtheme = bw()) +
   stat_qq() +
   facet_grid(Treatment ~ Weeks)
@@ -367,41 +352,35 @@ ggplot(pH_data, aes(sample = pH), ggtheme = bw()) +
 
 ```
 
-
-```{r}
-res.aov <- pH_data %>%
-  anova_test(dv = pH, wid = Sample.ID,
-  within = c(Treatment, Weeks))
-
-get_anova_table(res.aov)
-
-```
-
-Turning data into long format
 ```{r}
 
+pH_data$Sample.ID <- paste(pH_data$Sample.ID, 1:nrow(tidyData), sep = "-")
 
-longData <- tidyData %>%
-  dplyr::select(-2) %>%
-  pivot_longer(cols = c(pH:`K (mg/kg)`),
-               names_to = "Compound",
-               values_to = "Result")
+pH_data <- pH_data %>%
+  dplyr::arrange(Treatment, Weeks, Sample.ID) %>%
+  dplyr::mutate(ID = 1:nrow(pH_data))
 
-#longData$Sample.ID <- paste(longData$Sample.ID, 1:nrow(longData), sep = "-")
 
-head(longData)
 
+str(pH_data)
 
 ```
 
 ```{r}
+pH.MAN <- multRM(pH ~ Treatment*Weeks, data = pH_data,
+                 subject = "ID", within = c("Weeks", "Treatment" ))
 
-str(longData)
-
+summary(pH.MAN)
 ```
+
+
+
+
+
+
+
 ```{r}
-longData$Compound <- as.factor(longData$Compound)
-summary(longData)
+
 ```
 
 
@@ -474,3 +453,8 @@ which(is.na(tidyData))
 
 
 
+```{r}
+
+pH
+
+```
