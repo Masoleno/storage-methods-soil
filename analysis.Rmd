@@ -39,6 +39,7 @@ library(tidyverse)
 library(gridExtra)
 library(rstatix)
 library(car)
+library(MANOVA.RM)
 
 ```
 Read in csv file created at the end of the data-wrangling script
@@ -84,6 +85,7 @@ tidyData$Weeks <- as.factor(tidyData$Weeks)
 
 tidyData$Treatment <- as.factor(tidyData$Treatment)
 
+str(tidyData)
 ```
 
 ```{r}
@@ -291,7 +293,7 @@ write.csv(tukey_results, file = "tukey_results.csv", row.names = FALSE)
 
 ```
 
-
+ANOVA on pH only
 ```{r}
 
 pH_data <- tidyData %>%
@@ -375,14 +377,100 @@ get_anova_table(res.aov)
 
 ```
 
+Turning data into long format
 ```{r}
 
+
+longData <- tidyData %>%
+  dplyr::select(-2) %>%
+  pivot_longer(cols = c(pH:`K (mg/kg)`),
+               names_to = "Compound",
+               values_to = "Result")
+
+#longData$Sample.ID <- paste(longData$Sample.ID, 1:nrow(longData), sep = "-")
+
+head(longData)
 
 
 ```
 
 ```{r}
 
+str(longData)
+
+```
+```{r}
+longData$Compound <- as.factor(longData$Compound)
+summary(longData)
+```
+
+
+```{r}
+
+longData %>%
+  dplyr::group_by(Compound, Treatment, Weeks) %>%
+  summarise(N = n())
+
+```
+
+MANOVA with long data - currently not working
+```{r}
+
+
+modell <- multRM(Result ~ Weeks*Compound*Treatment, data = longData,
+                 subject = "Sample.ID", within = c("Compound", "Treatment"))
+
+summary(modell)
 
 
 ```
+
+How to add a unique number on to each sample id (if needed):
+```{r}
+
+
+tidyData$Sample.ID <- paste(tidyData$Sample.ID, 1:nrow(tidyData), sep = "-")
+
+head(tidyData)
+```
+
+```{r}
+summary(tidyData)
+
+```
+
+```{r}
+levels(tidyData$Weeks)
+```
+
+```{r}
+levels(tidyData$Treatment)
+```
+
+```{r}
+
+  
+
+
+```
+
+
+```{r}
+
+
+modell <- multRM(cbind(pH, `Conductivity (mV)`, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, `TON (mg/kg)`,  `K (mg/kg)`)~Weeks*Treatment, data = tidyData,
+                 subject = "Sample.ID", within = c("Treatment", "Weeks"))
+
+summary(modell)
+
+
+```
+
+```{r}
+tidyData[,!complete.cases(tidyData)]
+
+which(is.na(tidyData))
+```
+
+
+
