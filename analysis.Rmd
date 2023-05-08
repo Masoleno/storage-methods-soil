@@ -358,17 +358,32 @@ pH_data$Sample.ID <- paste(pH_data$Sample.ID, 1:nrow(tidyData), sep = "-")
 
 pH_data <- pH_data %>%
   dplyr::arrange(Treatment, Weeks, Sample.ID) %>%
-  dplyr::mutate(ID = 1:nrow(pH_data))
+  dplyr::mutate(ID = case_when((Treatment == "Fridge" & Weeks == 0) ~ 1,
+                               (Treatment == "Fridge" & Weeks == 7) ~ 2,
+                               (Treatment == "Fridge" & Weeks == 24) ~ 3,
+                               (Treatment == "Dry" & Weeks == 0) ~ 4,
+                               (Treatment == "Dry" & Weeks == 7) ~ 5,
+                               (Treatment == "Dry" & Weeks == 24) ~ 6,
+                               (Treatment == "Frozen" & Weeks == 0) ~ 7,
+                               (Treatment == "Frozen" & Weeks == 7) ~ 8,
+                               (Treatment == "Frozen" & Weeks == 24) ~ 9,))
 
 
 
 str(pH_data)
 
 ```
+```{r}
+pH_data$ID <- as.integer(pH_data$ID)
+
+str(pH_data)
+
+```
+
 
 ```{r}
-pH.MAN <- multRM(pH ~ Treatment*Weeks, data = pH_data,
-                 subject = "ID", within = c("Weeks", "Treatment" ))
+pH.MAN <- RM(pH ~ Treatment*Weeks, data = pH_data,
+                 subject = "ID", within = "Weeks")
 
 summary(pH.MAN)
 ```
