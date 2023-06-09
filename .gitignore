@@ -45,3 +45,5 @@ plots/
 
 *.xlsx
 *.xlsxm
+
+.tmp.driveupload/
