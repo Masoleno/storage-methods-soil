@@ -35,21 +35,10 @@ str(chem_data)
 
 ```
 
-
-
-```{r}
-
-chem_data <- chem_data %>%
-  mutate_at(c("NO3..mg.kg.", "NO2..mg.kg.", "K..mg.kg."), as.numeric)
-
-```
 ```{r}
 head(chem_data)
 
 ```
-
-
-
 
 ```{r}
 
@@ -72,6 +61,13 @@ chem_data_filtered <- chem_data %>%
 str(chem_data_filtered)
 ```
 
+Converting to numeric. Some NA's will be introduced where values are missing. 
+```{r}
+
+chem_data_filtered <- chem_data_filtered %>%
+  mutate_at(c("NO3..mg.kg.", "NO2..mg.kg.", "K..mg.kg."), as.numeric)
+
+```
 
 
 ```{r}
@@ -84,36 +80,13 @@ head(chem_data_filtered, 20)
 complete.cases(chem_data_filtered)
 
 ```
-
-
-
-```{r}
-
-
-chem_data_filtered[!complete.cases(chem_data_filtered),]
-
-
-```
-
-
-
-Removing rows with NA's
-```{r}
-
-chem_data_filtered <- chem_data_filtered %>%
-  drop_na()
-
-head(chem_data_filtered,20)
-
-```
-
 ```{r}
 
 tail(chem_data_filtered, 20)
-
 ```
 
-Checking that all NA's are gone.
+
+
 ```{r}
 
 
@@ -121,6 +94,7 @@ chem_data_filtered[!complete.cases(chem_data_filtered),]
 
 
 ```
+
 
 Renaming columns so they're easier to write.
 ```{r}
@@ -147,20 +121,7 @@ head(chem_data_filtered)
 
 ```
 
-Creating a "Fresh" category for the time stamp 0 samples (e.g. the control).
-```{r}
-# not sure if this is necessary, ignoring for now
-#chem_data$Treatment[chem_data$weeks == 0] <- "Fresh"
 
-#head(chem_data, 20)
-
-```
-
-```{r}
-
-tail(chem_data_filtered, 20)
-
-```
 
 replacing negative values in the moisture and nitrate columns with 0. 
 ```{r}
@@ -175,7 +136,7 @@ tail(chem_data_filtered, 20)
 
 ```{r}
 
-write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE)
+write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE, na = "")
 
 ```
 
