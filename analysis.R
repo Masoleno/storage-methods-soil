@@ -8,9 +8,9 @@ options(scipen = 999)
 #library(MASS)
 library(tidyverse)
 library(gridExtra)
-library(rstatix)
 library(car)
-library(MANOVA.RM)
+library(rstatix)
+
 
 # Read in csv file created at the end of the data-wrangling script ----
 tidyData <- read.csv("chemistry-data-tidy.csv")
@@ -22,13 +22,13 @@ str(tidyData)
 # Rename columns so they're easier to write. ----
 tidyData<- tidyData %>% 
   rename(
-    "NH4 (mg/kg)" = NH4..mg.kg.,
-    "TON (mg/kg)" = TON..mg.kg.,
-    "K (mg/kg)" = K..mg.kg.,
-    "NO2 (mg/kg)" = NO2..mg.kg.,
-    "NO3 (mg/kg)" = NO3..mg.kg.,
-    "Conductivity (mV)" = Conductivity..mV.,
-    "Moisture (%)" = Moisture....
+    "NH4" = NH4..mg.kg.,
+    "TON" = TON..mg.kg.,
+    "K" = K..mg.kg.,
+    "NO2" = NO2..mg.kg.,
+    "NO3" = NO3..mg.kg.,
+    "Conductivity" = Conductivity..mV.,
+    "Moisture" = Moisture....
   )
 
 head(tidyData)
@@ -51,21 +51,43 @@ str(pH_data)
 
 ## Testing for normality ----
 ### Plotting ----
-ggplot(data = pH_data, aes(sample=pH)) +
-  geom_qq() + 
-  geom_qq_line(color="red") + 
-  xlab("Theoretical") +
-  ylab("Sample") +
-  facet_grid(Treatment ~ Weeks)
+#plotting histograms and qqplots in a for loop
+for (i in 3:9) {
+  plot1 <- ggplot(data = tidyData, aes(sample = tidyData[,i])) +
+    geom_qq() + 
+    geom_qq_line(color="red") + 
+    labs(title = colnames(tidyData[i])) +
+    facet_grid(Treatment ~ Weeks)
+  print(plot1)
+  
+  plot2 <- ggplot(data = tidyData, aes(tidyData[, i])) +
+    geom_histogram() +
+    labs(title = colnames(tidyData[i])) +
+    facet_grid(Treatment ~ Weeks)
+  print(plot2)
+}
 
-ggplot(data = pH_data, aes(pH)) +
-  geom_histogram() +
-  facet_grid(Treatment ~ Weeks)
 ### Shapiro-Wilks ----
-normality<-pH_data %>%
+
+## This is neat but haven't figured out how to group it by treatment and weeks first.
+# lshap <- lapply(tidyData[3:9], shapiro.test)
+# 
+# lshap[[1]]
+# 
+# shap_res <- sapply(lshap, `[` , c("statistic", "p.value"))
+# t(shap_res)
+
+#Testing all variables for normality, grouped by Treatment and Weeks. This uses shapiro_test() from the rstatix
+#package.
+normality<-tidyData %>%
   group_by(Treatment,Weeks) %>%
-  shapiro_test(pH)
+  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
 data.frame(normality)
+normality %>%
+  group_by(Treatment, Weeks, variable)
+head(normality)
+
+shapiro.test(tidyData$pH)
 
 ## Fitting anova model with rstatix package ----
 pH_mod <- anova_test(data = pH_data, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks))
