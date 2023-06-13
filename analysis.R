@@ -119,11 +119,15 @@ get_anova_table(TON_mod)
 K_mod <- anova_test(data = tidyData, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(K_mod)
 
-## This is currntly throwing an error - cba to fix
-for (i in 3:9) {
-  avz <- anova_test(tidyData, dv = tidyData[ , i], wid = Sample.ID, within = c(Treatment, Weeks))
+## This is currently throwing an error - cba to fix
+columns <- names(tidyData[, 3:9])
+for (col in columns) {
+  avz <- anova_test(tidyData, dv = tidyData[ , col], wid = Sample.ID, within = c(Treatment, Weeks))
   get_anova_table(avz)
   
+  cat("Repeated Measures Two-Way ANOVA for", col, ":\n")
+  print(avz)
+  cat("\n")
 }
 
 anova_results <- purrr::map(tidyData[,2:9], ~anova_test(data = tidyData, dv = .x, 
