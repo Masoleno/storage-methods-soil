@@ -90,9 +90,45 @@ head(normality)
 shapiro.test(tidyData$pH)
 
 ## Fitting anova model with rstatix package ----
-pH_mod <- anova_test(data = pH_data, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks))
-get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically applies "Greenhouse-Geisser sphericity 
-#correction" on any factors that violate this assumption
+### pH ----
+pH_mod <- anova_test(data = tidyData, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically applies "Greenhouse-Geisser 
+# sphericity correction" on any factors that violate this assumption
+
+### Conductivity ----
+cond_mod <- anova_test(data = tidyData, dv = Conductivity, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(cond_mod) 
+
+### NO3 ----
+NO3_mod <- anova_test(data = tidyData, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(NO3_mod)
+
+### NO2 ----
+NO2_mod <- anova_test(data = tidyData, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(NO2_mod)
+
+### NH4----
+NH4_mod <- anova_test(data = tidyData, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(NH4_mod)
+
+### TON ----
+TON_mod <- anova_test(data = tidyData, dv = TON, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(TON_mod)
+
+### K ----
+K_mod <- anova_test(data = tidyData, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
+get_anova_table(K_mod)
+
+## This is currntly throwing an error - cba to fix
+for (i in 3:9) {
+  avz <- anova_test(tidyData, dv = tidyData[ , i], wid = Sample.ID, within = c(Treatment, Weeks))
+  get_anova_table(avz)
+  
+}
+
+anova_results <- purrr::map(tidyData[,2:9], ~anova_test(data = tidyData, dv = .x, 
+                                                        wid = tidyData$Sample.ID, within = c(Treatment, Weeks)))
+###########################################
 
 ### Post-hoc tests ----
 pH.one.way <- pH_data %>%
