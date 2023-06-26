@@ -8,9 +8,8 @@ options(scipen = 999)
 #library(MASS)
 library(tidyverse)
 library(gridExtra)
-library(car)
+#library(car)
 library(rstatix)
-library(qqplotr)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
