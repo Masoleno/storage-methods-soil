@@ -10,6 +10,7 @@ library(tidyverse)
 library(gridExtra)
 library(car)
 library(rstatix)
+library(qqplotr)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
@@ -54,14 +55,14 @@ str(tidyData)
 #plotting histograms and qqplots in a for loop
 for (i in 3:9) {
   plot1 <- ggplot(data = tidyData, aes(sample = tidyData[,i])) +
-    geom_qq() + 
+    geom_qq() +
     geom_qq_line(color="red") + 
     labs(title = colnames(tidyData[i])) +
     facet_grid(Treatment ~ Weeks)
   print(plot1)
   
   plot2 <- ggplot(data = tidyData, aes(tidyData[, i])) +
-    geom_histogram(binwidth = 10) +
+    geom_histogram(binwidth = 10) + # some histograms need different binwidths so will have to tweak this or plot outside of loop
     labs(title = colnames(tidyData[i])) +
     facet_grid(Treatment ~ Weeks)
   print(plot2)
@@ -128,40 +129,146 @@ get_anova_table(K_mod)
 
 
 ### Post-hoc tests ----
-
+#### pH ----
+##### Effect of time (Weeks) at each Treatment type----
 pH.one.way <- tidyData %>%
-  group_by(Weeks) %>%
-  anova_test(dv = pH, wid = Sample.ID, within = Treatment) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-pH.one.way
-
-
-pH.one.way2 <- tidyData %>%
   group_by(Treatment) %>%
   anova_test(dv = pH, wid = Sample.ID, within = Weeks) %>%
   get_anova_table() %>%
   adjust_pvalue(method = "bonferroni")
 
-pH.one.way2
+pH.one.way
 
-### Pairwise comparisons between treatment groups ----
-pwc <- tidyData %>%
-  group_by(Weeks) %>%
-  pairwise_t_test(
-    pH ~ Treatment, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-pwc
-
-### Pairwise comparisons between time points ----
-pwc2 <- pH_data %>%
+##### Pairwise comparisons between time points ----
+pH.pwc <- tidyData %>%
   group_by(Treatment) %>%
   pairwise_t_test(
     pH ~ Weeks, paired = TRUE,
     p.adjust.method = "bonferroni"
   )
-pwc2
+pH.pwc
+
+
+#### Conductivity ----
+##### Effect of time (Weeks) at each Treatment type----
+con.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = Conductivity, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+con.one.way
+
+##### Pairwise comparisons between time points ----
+con.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    Conductivity ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+con.pwc
+
+
+#### NO3----
+##### Effect of time (Weeks) at each Treatment type----
+NO3.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = NO3, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+NO3.one.way
+
+##### Pairwise comparisons between time points ----
+NO3.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    NO3 ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+NO3.pwc
+
+
+#### NO2 ----
+##### Effect of time (Weeks) at each Treatment type----
+NO2.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = NO2, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+NO2.one.way
+
+##### Pairwise comparisons between time points ----
+NO2.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    NO2 ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+NO2.pwc
+
+
+#### NH4 ----
+##### Effect of time (Weeks) at each Treatment type----
+NH4.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = NH4, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+NH4.one.way
+
+##### Pairwise comparisons between time points ----
+NH4.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    NH4 ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+NH4.pwc
+
+
+#### TON ----
+##### Effect of time (Weeks) at each Treatment type----
+TON.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = TON, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+TON.one.way
+
+##### Pairwise comparisons between time points ----
+TON.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    TON ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+TON.pwc
+
+
+#### K ----
+##### Effect of time (Weeks) at each Treatment type----
+K.one.way <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = K, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+K.one.way
+
+##### Pairwise comparisons between time points ----
+K.pwc <- tidyData %>%
+  group_by(Treatment) %>%
+  pairwise_t_test(
+    K ~ Weeks, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+K.pwc
+
+
 
 
 ## Fitting the anova model using aov ----
