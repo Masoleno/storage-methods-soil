@@ -41,13 +41,13 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 str(tidyData)
 
 # RM ANOVA for pH ----
-## Extract pH data ----
-pH_data <- tidyData %>%
-  select(Sample.ID, pH, Treatment, Weeks)
+# Extract pH data ----
+#pH_data <- tidyData %>%
+#  select(Sample.ID, pH, Treatment, Weeks)
 
-
-head(pH_data,20)
-str(pH_data)
+# 
+# head(pH_data,20)
+# str(pH_data)
 
 ## Testing for normality ----
 ### Plotting ----
@@ -61,7 +61,7 @@ for (i in 3:9) {
   print(plot1)
   
   plot2 <- ggplot(data = tidyData, aes(tidyData[, i])) +
-    geom_histogram() +
+    geom_histogram(binwidth = 10) +
     labs(title = colnames(tidyData[i])) +
     facet_grid(Treatment ~ Weeks)
   print(plot2)
@@ -87,7 +87,6 @@ normality %>%
   group_by(Treatment, Weeks, variable)
 head(normality)
 
-shapiro.test(tidyData$pH)
 
 ## Fitting anova model with rstatix package ----
 ### pH ----
@@ -118,39 +117,36 @@ get_anova_table(TON_mod)
 ### K ----
 K_mod <- anova_test(data = tidyData, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(K_mod)
+# Printing all results together to console for easier reading
+get_anova_table(pH_mod)
+get_anova_table(cond_mod)
+get_anova_table(NO3_mod)
+get_anova_table(NO2_mod)
+get_anova_table(NH4_mod)
+get_anova_table(TON_mod)
+get_anova_table(K_mod)
 
-## This is currently throwing an error - cba to fix
-columns <- names(tidyData[, 3:9])
-for (col in columns) {
-  avz <- anova_test(tidyData, dv = tidyData[ , col], wid = Sample.ID, within = c(Treatment, Weeks))
-  get_anova_table(avz)
-  
-  cat("Repeated Measures Two-Way ANOVA for", col, ":\n")
-  print(avz)
-  cat("\n")
-}
-
-anova_results <- purrr::map(tidyData[,2:9], ~anova_test(data = tidyData, dv = .x, 
-                                                        wid = tidyData$Sample.ID, within = c(Treatment, Weeks)))
-###########################################
 
 ### Post-hoc tests ----
-pH.one.way <- pH_data %>%
-  group_by(Treatment) %>%
-  anova_test(dv = pH, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-pH.one.way
 
-pH.one.way2 <- pH_data %>%
+pH.one.way <- tidyData %>%
   group_by(Weeks) %>%
   anova_test(dv = pH, wid = Sample.ID, within = Treatment) %>%
   get_anova_table() %>%
   adjust_pvalue(method = "bonferroni")
+pH.one.way
+
+
+pH.one.way2 <- tidyData %>%
+  group_by(Treatment) %>%
+  anova_test(dv = pH, wid = Sample.ID, within = Weeks) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
 pH.one.way2
 
 ### Pairwise comparisons between treatment groups ----
-pwc <- pH_data %>%
+pwc <- tidyData %>%
   group_by(Weeks) %>%
   pairwise_t_test(
     pH ~ Treatment, paired = TRUE,
@@ -175,3 +171,21 @@ summary(model.aov)
 #Can also define error like this, doesn't make much difference to the results
 model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment+Weeks)), data = pH_data)
 summary(model.aov)  
+
+
+## This is currently throwing an error - cba to fix
+# columns <- names(tidyData[, 3:9])
+# for (col in columns) {
+#   avz <- anova_test(tidyData, dv = tidyData[ , col], wid = Sample.ID, within = c(Treatment, Weeks))
+#   get_anova_table(avz)
+#   
+#   cat("Repeated Measures Two-Way ANOVA for", col, ":\n")
+#   print(avz)
+#   cat("\n")
+# }
+# 
+# tidyData %>%
+#   group_by(Treatment, Weeks) %>%
+#   nest() %>%
+#   mutate(ano_obj = map( ~anova_test(data = tidyData, dv = .x, wid = Sample.ID, within = c(Treatment, Weeks)))
+###########################################
