@@ -40,16 +40,8 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 str(tidyData)
 
-# RM ANOVA for pH ----
-# Extract pH data ----
-#pH_data <- tidyData %>%
-#  select(Sample.ID, pH, Treatment, Weeks)
 
-# 
-# head(pH_data,20)
-# str(pH_data)
-
-## Testing for normality ----
+# Testing for normality ----
 ### Plotting ----
 #plotting histograms and qqplots in a for loop
 for (i in 3:9) {
@@ -88,46 +80,82 @@ normality %>%
 head(normality)
 
 
-## Fitting anova model with rstatix package ----
-### pH ----
+# Fitting anova model with rstatix package ----
+## pH ----
+# Check for rows with NA's in pH column
+tidyData[!complete.cases(tidyData$pH),]
+
+# Run model
 pH_mod <- anova_test(data = tidyData, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically applies "Greenhouse-Geisser 
 # sphericity correction" on any factors that violate this assumption
 
-### Conductivity ----
+## Conductivity ----
+# Check for rows with NA's in Conductivity column
+tidyData[!complete.cases(tidyData$Conductivity),]
+
+# Run model
 cond_mod <- anova_test(data = tidyData, dv = Conductivity, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(cond_mod) 
 
-### NO3 ----
-NO3_mod <- anova_test(data = tidyData, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks))
+## NO3 ----
+# Check for  rows with NA's in NO3 column
+tidyData[!complete.cases(tidyData$NO3),]
+
+# Remove NA's
+NO3_data <- tidyData %>%
+  drop_na(NO3)
+head(NO3_data)
+
+# Run model
+NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(NO3_mod)
 
-### NO2 ----
-NO2_mod <- anova_test(data = tidyData, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks))
+## NO2 ----
+# Check for  rows with NA's in NO2 column
+tidyData[!complete.cases(tidyData$NO2),]
+
+# Remove NA's
+NO2_data <- tidyData %>%
+  drop_na(NO2)
+head(NO2_data)
+
+# Run model
+NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(NO2_mod)
 
-### NH4----
+## NH4----
+# Check for  rows with NA's in NO2 column
+tidyData[!complete.cases(tidyData$NH4),]
+
+# Run model
 NH4_mod <- anova_test(data = tidyData, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(NH4_mod)
 
-### TON ----
+## TON ----
+# Check for  rows with NA's in NO2 column
+tidyData[!complete.cases(tidyData$TON),]
+
+# Run model
 TON_mod <- anova_test(data = tidyData, dv = TON, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(TON_mod)
 
-### K ----
-K_mod <- anova_test(data = tidyData, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
-get_anova_table(K_mod)
-# Printing all results together to console for easier reading
-get_anova_table(pH_mod)
-get_anova_table(cond_mod)
-get_anova_table(NO3_mod)
-get_anova_table(NO2_mod)
-get_anova_table(NH4_mod)
-get_anova_table(TON_mod)
+## K ----
+# Check for  rows with NA's in NO2 column
+tidyData[!complete.cases(tidyData$K),]
+
+# Remove NA's
+K_data <- tidyData %>%
+  drop_na(K)
+head(K_data)
+
+# Run model
+K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(K_mod)
 
 
-### Post-hoc tests ----
+
+# Post-hoc tests ----
 #### pH ----
 ##### Effect of time (Weeks) at each Treatment type----
 pH.one.way <- tidyData %>%
@@ -170,7 +198,7 @@ con.pwc
 
 #### NO3----
 ##### Effect of time (Weeks) at each Treatment type----
-NO3.one.way <- tidyData %>%
+NO3.one.way <- NO3_data %>%
   group_by(Treatment) %>%
   anova_test(dv = NO3, wid = Sample.ID, within = Weeks) %>%
   get_anova_table() %>%
@@ -190,7 +218,7 @@ NO3.pwc
 
 #### NO2 ----
 ##### Effect of time (Weeks) at each Treatment type----
-NO2.one.way <- tidyData %>%
+NO2.one.way <- NO2_data %>%
   group_by(Treatment) %>%
   anova_test(dv = NO2, wid = Sample.ID, within = Weeks) %>%
   get_anova_table() %>%
@@ -250,7 +278,7 @@ TON.pwc
 
 #### K ----
 ##### Effect of time (Weeks) at each Treatment type----
-K.one.way <- tidyData %>%
+K.one.way <- K_data %>%
   group_by(Treatment) %>%
   anova_test(dv = K, wid = Sample.ID, within = Weeks) %>%
   get_anova_table() %>%
@@ -269,29 +297,94 @@ K.pwc
 
 
 
+## Printing all results together to console for easier reading ----
+get_anova_table(pH_mod)
+pH.one.way
+pH.pwc
+get_anova_table(cond_mod)
+con.one.way
+con.pwc
+get_anova_table(NO3_mod)
+NO3.one.way
+NO3.pwc
+get_anova_table(NO2_mod)
+NO2.one.way
+NO2.pwc
+get_anova_table(NH4_mod)
+NH4.one.way
+NH4.pwc
+get_anova_table(TON_mod)
+TON.one.way
+TON.pwc
+get_anova_table(K_mod)
+K.one.way
+K.pwc
+
+data.frame(pH.pwc)
+data.frame(con.pwc)
+data.frame(NO3.pwc)
+data.frame(NO2.pwc)
+data.frame(NH4.pwc)
+data.frame(TON.pwc)
+data.frame(K.pwc)
+pwc_results <- rbind(pH.pwc, con.pwc, NO3.pwc, NO2.pwc, NH4.pwc, TON.pwc, K.pwc)
+
+write_csv(pwc_results, "pwc-results.csv")
+
+# This works but haven't figured out how to get the tested variable as a column 
+data.frame(pH.one.way)
+data.frame(con.one.way)
+data.frame(NO3.one.way)
+data.frame(NO2.one.way)
+data.frame(NH4.one.way)
+data.frame(TON.one.way)
+data.frame(K.one.way)
+owc_results <- rbind(pH.one.way, con.one.way, NO3.one.way, NO2.one.way, NH4.one.way, TON.one.way, K.one.way)
+
+# This doesn't work as anova results are in a list
+# data.frame(pH_mod)
+# data.frame(cond_mod)
+# data.frame(NO3_mod)
+# data.frame(NO2_mod)
+# data.frame(NH4_mod)
+# data.frame(TON_mod)
+# data.frame(K_mod)
+# aov_results <- rbind(pH_mod, cond_mod, NO3_mod, NO2_mod, NH4_mod, TON_mod, K_mod)
 
 ## Fitting the anova model using aov ----
-model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = pH_data)
-summary(model.aov)
+# model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = pH_data)
+# summary(model.aov)
 
 #Can also define error like this, doesn't make much difference to the results
-model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment+Weeks)), data = pH_data)
-summary(model.aov)  
+# model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment+Weeks)), data = pH_data)
+# summary(model.aov)  
 
 
-## This is currently throwing an error - cba to fix
-# columns <- names(tidyData[, 3:9])
-# for (col in columns) {
+
+
+## Looping - this is currently throwing an error - cba to fix ----
+
+# results_df <- data.frame(Column = character(),
+#                           F_value = numeric(),
+#                           P_value = numeric(),
+#                           p_significance_level = character(),
+#                           stringsAsFactors = FALSE)
+
+
+# for (col in 3:9) {
+# column <- names(tidyData[i])
 #   avz <- anova_test(tidyData, dv = tidyData[ , col], wid = Sample.ID, within = c(Treatment, Weeks))
-#   get_anova_table(avz)
+#   result <- get_anova_table(avz)
+#   f_value <- result[[1]][1, 4]
+#   p_value <- result[[1]][1, 5]
+#   p_significant <- result[[1]][1, 6]
+# 
+#   row <- data.frame(Column = column, F_value = f_value, P_value = p_value,
+#                   p_significance_level= p_significant, stringsAsFactors = FALSE)
+#   }
 #   
 #   cat("Repeated Measures Two-Way ANOVA for", col, ":\n")
 #   print(avz)
 #   cat("\n")
 # }
-# 
-# tidyData %>%
-#   group_by(Treatment, Weeks) %>%
-#   nest() %>%
-#   mutate(ano_obj = map( ~anova_test(data = tidyData, dv = .x, wid = Sample.ID, within = c(Treatment, Weeks)))
 ###########################################
