@@ -116,6 +116,19 @@ N_data <- tidyData %>%
 head(N_data)
 ```
 
+```{r}
+
+N_data[!complete.cases(N_data), ]
+
+```
+```{r}
+
+N_data <- N_data %>%
+  drop_na()
+
+N_data[!complete.cases(N_data), ]
+```
+
 Make data into long format for plotting on line graph
 ```{r}
 
@@ -138,6 +151,13 @@ summaryN <- N_data_long %>%
 
 summaryN
 ```
+
+```{r}
+
+summaryN[!complete.cases(summaryN), ]
+
+```
+
 
 ```{r}
 
