@@ -133,21 +133,11 @@ chem_data_filtered <- chem_data_filtered%>%
 tail(chem_data_filtered, 20)
 ```
 
-Removing rows where NH4 values are naff
-
-```{r}
-
-chem_data_filtered2 <- chem_data_filtered %>%
-                        filter(!row_number() %in% c(56, 57, 66))
-  
-
-
-```
 
 
 ```{r}
 
-write_csv(chem_data_filtered2, "chemistry-data-tidy.csv", col_names = TRUE, na = "")
+write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE, na = "")
 
 ```
 
