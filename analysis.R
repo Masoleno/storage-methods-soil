@@ -1,21 +1,17 @@
-#Set numbers to show in standard format instead of scientific notation. 
-#(Reactivate scientific notation with options(scipen=0))
+# Set numbers to show in standard format instead of scientific notation. 
+# (Reactivate scientific notation with options(scipen = 0))
 options(scipen = 999)
 
 # Load libraries ----
-
-#library(psych)
-#library(MASS)
 library(tidyverse)
 library(gridExtra)
-#library(car)
 library(rstatix)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
 tidyData <- read.csv("chemistry-data-tidy.csv")
 
-#Look at the data
+# Look at the data
 head(tidyData)
 str(tidyData)
 
@@ -41,25 +37,51 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 str(tidyData)
 
 
+
 # Testing for normality ----
 ### Plotting ----
-#plotting histograms and qqplots in a for loop
+# Removing NAs for plotting
+
+plotData <- tidyData %>%
+  na.omit()
+
+plotData[!complete.cases(plotData),]
+
+
+# Plotting histograms and qqplots
 for (i in 3:9) {
-  plot1 <- ggplot(data = tidyData, aes(sample = tidyData[,i])) +
+  plot1 <- ggplot(data = plotData, aes(sample = plotData[,i])) +
     geom_qq() +
     geom_qq_line(color="red") + 
-    labs(title = colnames(tidyData[i])) +
-    facet_grid(Treatment ~ Weeks)
+    labs(title = colnames(plotData[i])) +
+    facet_wrap(Treatment~Weeks, scales = "free_y")
   print(plot1)
   
-  plot2 <- ggplot(data = tidyData, aes(tidyData[, i])) +
-    geom_histogram(binwidth = 10) + # some histograms need different binwidths so will have to tweak this or plot outside of loop
-    labs(title = colnames(tidyData[i])) +
-    facet_grid(Treatment ~ Weeks)
+  plot2 <- ggplot(data = plotData, aes(plotData[, i])) +
+    geom_histogram(binwidth = i) + # NO2 and pH histograms need different binwidths 
+    # so will have to tweak this or plot outside of loop. But qqplots are fine
+    labs(title = colnames(plotData[i])) +
+    facet_wrap(Treatment~Weeks, scales = "free_y")
   print(plot2)
 }
 
 ### Shapiro-Wilks ----
+normality <-tidyData %>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
+data.frame(normality)
+normality %>%
+  group_by(Treatment, Weeks, variable)
+head(normality)
+
+# Normality testing without NA's doesn't make much difference 
+normality2 <-plotData %>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
+data.frame(normality2)
+normality2 %>%
+  group_by(Treatment, Weeks, variable)
+head(normality2)
 
 ## This is neat but haven't figured out how to group it by treatment and weeks first.
 # lshap <- lapply(tidyData[3:9], shapiro.test)
@@ -69,15 +91,8 @@ for (i in 3:9) {
 # shap_res <- sapply(lshap, `[` , c("statistic", "p.value"))
 # t(shap_res)
 
-#Testing all variables for normality, grouped by Treatment and Weeks. This uses shapiro_test() from the rstatix
-#package.
-normality<-tidyData %>%
-  group_by(Treatment,Weeks) %>%
-  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
-data.frame(normality)
-normality %>%
-  group_by(Treatment, Weeks, variable)
-head(normality)
+# Testing all variables for normality, grouped by Treatment and Weeks. 
+# This uses shapiro_test() from the rstatix package.
 
 
 # Fitting anova model with rstatix package ----
@@ -125,15 +140,19 @@ NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Tre
 get_anova_table(NO2_mod)
 
 ## NH4----
-# Check for  rows with NA's in NO2 column
+# Check for  rows with NA's in NH4 column
 tidyData[!complete.cases(tidyData$NH4),]
 
+# Removing rows where NH4 results are naff (dilution not done properly so concentration was outside calibration)
+NH4_data <- tidyData %>%
+  filter(!row_number() %in% c(56, 57, 66))
+
 # Run model
-NH4_mod <- anova_test(data = tidyData, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks))
+NH4_mod <- anova_test(data = NH4_data, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(NH4_mod)
 
 ## TON ----
-# Check for  rows with NA's in NO2 column
+# Check for  rows with NA's in TON column
 tidyData[!complete.cases(tidyData$TON),]
 
 # Run model
@@ -141,18 +160,18 @@ TON_mod <- anova_test(data = tidyData, dv = TON, wid = Sample.ID, within = c(Tre
 get_anova_table(TON_mod)
 
 ## K ----
-# Check for  rows with NA's in NO2 column
+# Check for  rows with NA's in K column
 tidyData[!complete.cases(tidyData$K),]
 
 # Remove NA's
 K_data <- tidyData %>%
   drop_na(K)
 head(K_data)
+tail(K_data)
 
 # Run model
 K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(K_mod)
-
 
 
 # Post-hoc tests ----
@@ -238,7 +257,7 @@ NO2.pwc
 
 #### NH4 ----
 ##### Effect of time (Weeks) at each Treatment type----
-NH4.one.way <- tidyData %>%
+NH4.one.way <- NH4_data %>%
   group_by(Treatment) %>%
   anova_test(dv = NH4, wid = Sample.ID, within = Weeks) %>%
   get_anova_table() %>%
@@ -286,7 +305,7 @@ K.one.way <- K_data %>%
 
 K.one.way
 
-##### Pairwise comparisons between time points ----
+##### Pairwise comparisons between time points ---- Also not working with the reduced data set
 K.pwc <- tidyData %>%
   group_by(Treatment) %>%
   pairwise_t_test(
@@ -297,7 +316,7 @@ K.pwc
 
 
 
-## Printing all results together to console for easier reading ----
+# Printing all results together to console for easier reading ----
 get_anova_table(pH_mod)
 pH.one.way
 pH.pwc
@@ -320,6 +339,18 @@ get_anova_table(K_mod)
 K.one.way
 K.pwc
 
+# Saving results to csv ----
+pH.aov <- data.frame(test = rep("pH", 3), get_anova_table(pH_mod))
+cond.aov <- data.frame(test = rep("Conductivity", 3), get_anova_table(cond_mod))
+NO3.aov <- data.frame(test = rep("NO3", 3),get_anova_table(NO3_mod))
+NO2.aov <-data.frame(test = rep("NO2", 3), get_anova_table(NO2_mod))
+NH4.aov <- data.frame(test = rep("NH4", 3), get_anova_table(NH4_mod))
+TON.aov <- data.frame(test = rep("TON", 3), get_anova_table(TON_mod))
+K.aov <- data.frame(test = rep("K", 3), get_anova_table(K_mod))
+
+aov_results <- rbind(pH.aov, cond.aov, NO3.aov, NO2.aov, NH4.aov, TON.aov, K.aov)
+write_csv(aov_results, "aov-results.csv")
+
 data.frame(pH.pwc)
 data.frame(con.pwc)
 data.frame(NO3.pwc)
@@ -327,42 +358,26 @@ data.frame(NO2.pwc)
 data.frame(NH4.pwc)
 data.frame(TON.pwc)
 data.frame(K.pwc)
-pwc_results <- rbind(pH.pwc, con.pwc, NO3.pwc, NO2.pwc, NH4.pwc, TON.pwc, K.pwc)
 
+pwc_results <- rbind(pH.pwc, con.pwc, NO3.pwc, NO2.pwc, NH4.pwc, TON.pwc, K.pwc)
 write_csv(pwc_results, "pwc-results.csv")
 
-# This works but haven't figured out how to get the tested variable as a column 
-data.frame(pH.one.way)
-data.frame(con.one.way)
-data.frame(NO3.one.way)
-data.frame(NO2.one.way)
-data.frame(NH4.one.way)
-data.frame(TON.one.way)
-data.frame(K.one.way)
-owc_results <- rbind(pH.one.way, con.one.way, NO3.one.way, NO2.one.way, NH4.one.way, TON.one.way, K.one.way)
+ph.owc <- data.frame(test = rep("pH", nrow(pH.one.way)), pH.one.way)
+con.owc <- data.frame(test = rep("Conductivity", nrow(con.one.way)), con.one.way)
+NO3.owc <- data.frame(test = rep("NO3", nrow(NO3.one.way)), NO3.one.way)
+NO2.owc <- data.frame(test = rep("NO2", nrow(NO2.one.way)), NO2.one.way)
+NH4.owc <- data.frame(test = rep("NH4", nrow(NH4.one.way)), NH4.one.way)
+TON.owc <- data.frame(test = rep("TON", nrow(TON.one.way)), TON.one.way)
+K.owc <- data.frame(test = rep("K", nrow(K.one.way)), K.one.way)
 
-# This doesn't work as anova results are in a list
-# data.frame(pH_mod)
-# data.frame(cond_mod)
-# data.frame(NO3_mod)
-# data.frame(NO2_mod)
-# data.frame(NH4_mod)
-# data.frame(TON_mod)
-# data.frame(K_mod)
-# aov_results <- rbind(pH_mod, cond_mod, NO3_mod, NO2_mod, NH4_mod, TON_mod, K_mod)
-
-## Fitting the anova model using aov ----
-# model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = pH_data)
-# summary(model.aov)
-
-#Can also define error like this, doesn't make much difference to the results
-# model.aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment+Weeks)), data = pH_data)
-# summary(model.aov)  
+owc_results <- rbind(ph.owc, con.owc, NO3.owc, NO2.owc,NH4.owc, TON.owc, K.owc)
+write_csv(owc_results, "owc-results.csv")
 
 
 
 
-## Looping - this is currently throwing an error - cba to fix ----
+
+## Looping anovas - this is currently throwing an error - cba to fix ----
 
 # results_df <- data.frame(Column = character(),
 #                           F_value = numeric(),
