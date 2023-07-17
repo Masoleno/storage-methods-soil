@@ -77,7 +77,8 @@ for (i in 2:9) {
 
 for(i in 3:9){
   plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = Weeks)) +
-          geom_boxplot(alpha = 0.5) + 
+          stat_boxplot(aes(Treatment, tidyData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Treatment, tidyData[,i]), outlier.shape = NA, coef = 0) +
           ylab(colnames(tidyData[i])) +
           labs(fill = "Time (weeks)" ) +
           theme(panel.background = element_rect(fill = NA, colour = 'black')) +
