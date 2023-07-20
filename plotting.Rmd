@@ -89,23 +89,44 @@ for(i in 3:9){
 
 
 ```
- 
-```{r}
 
+Can filter out week 0 as the data is the same for all treatments (it's the control)
+```{r}
+plotData <- tidyData %>%
+  filter(Weeks != 0)
 
 ```
 
-## combine figs into one?
+Boxplots split into treatments - plot with tidyData to include week 0 or eith plotdata to exclude it 
 ```{r}
 
+for(i in 3:9){
+  plot <- ggplot(plotData, aes(x = Weeks, y = plotData[,i])) +
+          stat_boxplot(aes(Weeks, plotData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, plotData[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(plotData[i])) +
+          facet_wrap(.~Treatment) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(min(plotData[,i]), max(plotData[,i]))) 
+ print(plot)
+ #ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+}
 
-combined_fig <- ggarrange(ggplot_6, ggplot_7, ggplot_8, ggplot_9, ggplot_10, ggplot_11, ggplot_12, common.legend = TRUE, legend = "bottom")
+
+for(i in 3:9){
+  plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
+          stat_boxplot(aes(Weeks, tidyData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, tidyData[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(tidyData[i])) +
+          facet_wrap(.~Treatment) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
+ print(plot)
+ #ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+}
 
 
-combined_fig
- 
- 
-``` 
+```
 
 
 Select only nitrogen data and assign to new dataframe
