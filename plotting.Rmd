@@ -90,28 +90,10 @@ for(i in 3:9){
 
 ```
 
-Can filter out week 0 as the data is the same for all treatments (it's the control)
-```{r}
-plotData <- tidyData %>%
-  filter(Weeks != 0)
 
-```
 
 Boxplots split into treatments - plot with tidyData to include week 0 or eith plotdata to exclude it 
 ```{r}
-
-for(i in 3:9){
-  plot <- ggplot(plotData, aes(x = Weeks, y = plotData[,i])) +
-          stat_boxplot(aes(Weeks, plotData[,i]), geom = "errorbar") +
-          geom_boxplot(aes(Weeks, plotData[,i]), outlier.shape = NA, coef = 0) +
-          ylab(colnames(plotData[i])) +
-          facet_wrap(.~Treatment) +
-          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
-          scale_y_continuous(limits = c(min(plotData[,i]), max(plotData[,i]))) 
- print(plot)
- #ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
-}
-
 
 for(i in 3:9){
   plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
@@ -122,7 +104,7 @@ for(i in 3:9){
           theme(panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
  print(plot)
- #ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+ #ggsave(file = paste0("boxplot-by-treatnment-", colnames(tidyData[i]), ".png"), plot = plot)
 }
 
 
