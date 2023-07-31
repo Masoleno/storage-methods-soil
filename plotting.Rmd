@@ -1,0 +1,190 @@
+---
+title: "plotting"
+author: "Maya Sollen-Norrlin"
+date: "2023-02-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Load libraries
+```{r}
+library(tidyverse)
+library(gridExtra)
+
+```
+
+## Read in data
+```{r}
+
+tidyData <- read.csv("chemistry-data-tidy.csv")
+
+```
+
+```{r}
+glimpse(tidyData)
+
+```
+```{r}
+
+summary(tidyData)
+
+```
+```{r}
+tidyData$Weeks <- as.factor(tidyData$Weeks)
+glimpse(tidyData)
+```
+ 
+Renaming columns so they're easier to write.
+```{r}
+
+tidyData<- tidyData %>% 
+  rename(
+   "NH4 (mg/kg)" = NH4..mg.kg.,
+   "TON (mg/kg)" = TON..mg.kg.,
+   "K (mg/kg)" = K..mg.kg.,
+   "NO2 (mg/kg)" = NO2..mg.kg.,
+   "NO3 (mg/kg)" = NO3..mg.kg.,
+   "Conductivity (mV)" = Conductivity..mV.,
+   "Moisture (%)" = Moisture....
+  )
+
+head(tidyData)
+
+
+```
+
+
+## Make frequency historgrams
+```{r}
+
+for (i in 2:9) {
+  plot1 <- ggplot(tidyData, aes(tidyData[,i])) +
+    geom_histogram() +
+    labs(x = colnames(tidyData[i]))
+  print(plot1)
+  
+}
+```
+
+
+## Make boxplots
+```{r}
+
+for(i in 3:9){
+  plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = Weeks)) +
+          stat_boxplot(aes(Treatment, tidyData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Treatment, tidyData[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(tidyData[i])) +
+          labs(fill = "Time (weeks)" ) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i])))
+ print(plot)
+ ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+}
+
+
+```
+
+
+
+Boxplots split into treatments - plot with tidyData to include week 0 or eith plotdata to exclude it 
+```{r}
+
+for(i in 3:9){
+  plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
+          stat_boxplot(aes(Weeks, tidyData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, tidyData[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(tidyData[i])) +
+          facet_wrap(.~Treatment) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
+ print(plot)
+ #ggsave(file = paste0("boxplot-by-treatnment-", colnames(tidyData[i]), ".png"), plot = plot)
+}
+
+
+```
+
+
+Select only nitrogen data and assign to new dataframe
+```{r}
+
+N_data <- tidyData %>%
+  select(Sample.ID, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, `TON (mg/kg)`, Treatment, Weeks)
+
+head(N_data)
+```
+
+```{r}
+
+N_data[!complete.cases(N_data), ]
+
+```
+```{r}
+
+N_data <- N_data %>%
+  drop_na()
+
+N_data[!complete.cases(N_data), ]
+```
+
+Make data into long format for plotting on line graph
+```{r}
+
+N_data_long <- N_data %>%
+  pivot_longer(cols = `NO3 (mg/kg)`:`TON (mg/kg)`,
+               names_to = "Nitrogen compound",
+               values_to = "Concentration (mg/kg)")
+
+head(N_data_long, 20)
+```
+
+```{r}
+
+summaryN <- N_data_long %>%
+  group_by(Treatment, Weeks, `Nitrogen compound`) %>%
+  summarise(
+    meanConc = mean(`Concentration (mg/kg)`),
+    sdConc = sd(`Concentration (mg/kg)`)
+  )
+
+summaryN
+```
+
+```{r}
+
+summaryN[!complete.cases(summaryN), ]
+
+```
+
+
+```{r}
+
+
+N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, color = factor(`Nitrogen compound`), group = `Nitrogen compound`)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Treatment) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  labs(x = "Time (weeks)", y = "Mean concentration (mg/kg)", colour = "Nitrogen form") +
+  scale_color_discrete(labels = c("NH4", "NO2", "NO3", "TON"))
+
+  
+
+N_plot
+```
+
+
+
+
+```{r}
+
+ggsave(filename = "Nitrogen-linegraph.png", plot = N_plot,  width = 9, unit = "in")
+
+```

@@ -1,5 +1,5 @@
 ---
-title: "raw-data-wrangling"
+title: "calculating K concentrations from calibration curve"
 author: "Maya Sollen-Norrlin"
 date: '2022-06-18'
 output: html_document
@@ -38,7 +38,11 @@ library(tidyverse)
 read in the calibration data
 ```{r}
 
+<<<<<<< HEAD
 cal.curve <- read.csv("K-calibration-week24.csv")
+=======
+cal.curve <- read.csv("K-calibration-curve-fresh.csv")
+>>>>>>> 7b1b81abc67f1c5bd02594ea9e40849bb7117d13
 
 
 cal.curve
@@ -52,7 +56,7 @@ renaming column 1 in the dataset as R didn't like the format
 ```{r}
 
 cal.curve <- cal.curve %>%
-  rename(std.conc = ï..std.conc..ppm.)
+  rename(std.conc = std..concentration..ppm.)
 
 
 ```
