@@ -38,7 +38,7 @@ library(tidyverse)
 read in the calibration data
 ```{r}
 
-cal.curve <- read.csv("K-calibration-curve-week7.csv")
+cal.curve <- read.csv("K-calibration-week24.csv")
 
 
 cal.curve
@@ -60,12 +60,12 @@ cal.curve <- cal.curve %>%
 plot the calbration curve
 ```{r}
 
-cal.plot <- ggplot(data = cal.curve, aes(x = std.conc, y= reading)) +
+cal.plot <- ggplot(data = cal.curve, aes(x = std_conc_ppm, y= reading)) +
   geom_point()+
   geom_smooth(method = lm, se= F, colour = "forestgreen") +
   ylab("Photometer Reading") + xlab("Standard Concentration (ppm)") +
   scale_colour_manual(values = c("cornflowerblue","darkgreen")) +
-  ggtitle("Calibration Curve Potassium All Samples week 7") +
+  ggtitle("Calibration Curve Potassium All Samples week 24") +
   theme(
 		# get rid of grid and color background
 		# fill with nothing, black border
@@ -80,7 +80,7 @@ cal.plot
 
 ```{r}
 
-mod <- lm(reading~std.conc, data = cal.curve)
+mod <- lm(reading~std_conc_ppm, data = cal.curve)
 
 mod
 
@@ -120,12 +120,12 @@ head(sample.readings)
 
 ```{r}
 
-sample.readings.w7 <- sample.readings %>%
-  filter(time..weeks. == 7)
+sample.readings.w24 <- sample.readings %>%
+  filter(time..weeks. == 24)
 
 
 
-head(sample.readings.w7)
+head(sample.readings.w24)
 
 
 
@@ -134,12 +134,12 @@ head(sample.readings.w7)
 
 ```{r}
 
-sample.concentrations <- vector(mode = "numeric", length = length(sample.readings.w7$reading))
+sample.concentrations <- vector(mode = "numeric", length = length(sample.readings.w24$reading))
 sample.concentrations
 
 
-for (i in 1:length(sample.readings.w7$reading)) {
-  K <- (sample.readings.w7$reading - intercept)/slope
+for (i in 1:length(sample.readings.w24$reading)) {
+  K <- (sample.readings.w24$reading - intercept)/slope
   sample.concentrations[i] <- K[i]
   
 }
@@ -147,17 +147,17 @@ for (i in 1:length(sample.readings.w7$reading)) {
 
 sample.concentrations
 
-sample.readings.w7 <- sample.readings.w7 %>%
+sample.readings.w24 <- sample.readings.w24 %>%
   add_column(K.ppm = sample.concentrations)
 
-sample.readings.w7
+sample.readings.w24
 
 ```
 
 
 ```{r}
 
-write.csv(sample.readings.w7, "K-results-w7.csv", row.names = F)
+write.csv(sample.readings.w24, "K-results-w24.csv", row.names = F)
 
 
 ```
