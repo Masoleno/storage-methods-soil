@@ -92,7 +92,7 @@ for(i in 3:9){
 
 
 
-Boxplots split into treatments - plot with tidyData to include week 0 or eith plotdata to exclude it 
+Boxplots split into treatments - plot with tidyData to include week 0 or with plotdata to exclude it 
 ```{r}
 
 for(i in 3:9){
@@ -104,11 +104,28 @@ for(i in 3:9){
           theme(panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
  print(plot)
- #ggsave(file = paste0("boxplot-by-treatnment-", colnames(tidyData[i]), ".png"), plot = plot)
+ ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".png"), plot = plot, height = 7, width = 9, units = "in")
 }
 
 
 ```
+```{r}
+
+ pH_plot <- ggplot(tidyData, aes(x = Weeks, y = pH)) +
+          stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
+          ylab("pH") +
+          facet_wrap(.~Treatment) +
+          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(5.3, max(tidyData$pH)))
+ print(pH_plot)
+
+ggsave(file = "pH-boxplot.png", pH_plot, height = 7, width = 9, units = "in")
+
+
+```
+
+
 
 
 Select only nitrogen data and assign to new dataframe
