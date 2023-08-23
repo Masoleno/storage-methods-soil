@@ -33,6 +33,9 @@ loading libraries
 ```{r}
 
 library(tidyverse)
+library(ggpmisc)
+library(extrafont)
+font_import()
 
 ```
 
@@ -62,12 +65,13 @@ cal.curve <- cal.curve %>%
 plot the calbration curve
 ```{r}
 
-cal.plot <- ggplot(data = cal.curve, aes(x = std_conc_ppm, y= reading)) +
+cal.plot <- ggplot(data = cal.curve, aes(x = std.conc, y= reading)) +
   geom_point()+
   geom_smooth(method = lm, se= F, colour = "forestgreen") +
   ylab("Photometer Reading") + xlab("Standard Concentration (ppm)") +
   scale_colour_manual(values = c("cornflowerblue","darkgreen")) +
-  ggtitle("Calibration Curve Potassium All Samples week 24") +
+  ggtitle("Calibration Curves Potassium") +
+  facet_wrap(.~week)
   theme(
 		# get rid of grid and color background
 		# fill with nothing, black border
@@ -81,28 +85,108 @@ cal.plot
 ```
 
 ```{r}
+week.labs <- c("Week 0", "Week 7", "Week 24")
+names(week.labs) <- c("0", "7", "24")
 
-mod <- lm(reading~std_conc_ppm, data = cal.curve)
+cal.plot <- ggplot(data = cal.curve, aes(x = std.conc, y= reading)) +
+  stat_poly_line() +
+  stat_poly_eq(use_label("eq")) +
+  stat_poly_eq(label.y = 0.9) +
+  geom_point()+
+  ylab("Photometer Reading") + xlab("Standard Concentration (ppm)") +
+  scale_colour_manual(values = c("cornflowerblue","darkgreen")) +
+  ggtitle("Calibration Curves for Potassium") +
+  facet_wrap(.~week, labeller = labeller(week = week.labs)) +
+  theme(text = element_text(family = "sans", size = 14),
+		panel.background = element_rect(fill = NA, colour = 'black'), # get rid of grid and color background
+		panel.grid = element_blank(),                                 # fill with nothing, black border
+		plot.title = element_text(hjust = 0.5, size = 12))
 
-mod
+
+cal.plot
 
 ```
+
+```{r}
+ggsave(filename = "K-cal-plot.jpeg", plot = cal.plot,  width = 8, height = 6, unit = "in")
+
+```
+
+
+```{r}
+fresh.mod <- cal.curve %>%
+  filter(week == 0)
+
+mod0 <- lm(reading~std.conc, data = fresh.mod)
+
+mod0
+
+```
+
 ```{r}
 
-summary(mod)
+summary(mod0)
 
 ```
 
 ```{r}
 
-intercept <- mod$coefficients[1]
+intercept0 <- mod0$coefficients[1]
 
-slope <- mod$coefficients[2]
+slope0 <- mod0$coefficients[2]
 
 
 ```
 
+```{r}
+w7.mod <- cal.curve %>%
+  filter(week == 7)
 
+mod7 <- lm(reading~std.conc, data = w7.mod)
+
+mod7
+
+```
+
+```{r}
+
+summary(mod7)
+
+```
+
+```{r}
+
+intercept7 <- mod7$coefficients[1]
+
+slope7 <- mod7$coefficients[2]
+
+
+```
+
+```{r}
+w24.mod <- cal.curve %>%
+  filter(week == 24)
+
+mod24 <- lm(reading~std.conc, data = w24.mod)
+
+mod24
+
+```
+
+```{r}
+
+summary(mod24)
+
+```
+
+```{r}
+
+intercept24 <- mod24$coefficients[1]
+
+slope24 <- mod24$coefficients[2]
+
+
+```
 
 ```{r}
 sample.readings <- read.csv("K-readings.csv")
@@ -114,6 +198,7 @@ str(sample.readings)
 ```{r}
 summary(sample.readings)
 ```
+
 ```{r}
 head(sample.readings)
 
@@ -122,12 +207,12 @@ head(sample.readings)
 
 ```{r}
 
-sample.readings.w24 <- sample.readings %>%
-  filter(time..weeks. == 24)
+sample.readings.0 <- sample.readings %>%
+  filter(time..weeks. == 0)
 
 
 
-head(sample.readings.w24)
+head(sample.readings.0)
 
 
 
@@ -136,30 +221,102 @@ head(sample.readings.w24)
 
 ```{r}
 
-sample.concentrations <- vector(mode = "numeric", length = length(sample.readings.w24$reading))
-sample.concentrations
+sample.concentrations0 <- vector(mode = "numeric", length = length(sample.readings.0$reading))
+sample.concentrations0
 
 
-for (i in 1:length(sample.readings.w24$reading)) {
-  K <- (sample.readings.w24$reading - intercept)/slope
-  sample.concentrations[i] <- K[i]
+for (i in 1:length(sample.readings.0$reading)) {
+  K <- (sample.readings.0$reading - intercept0)/slope0
+  sample.concentrations0[i] <- K[i]
   
 }
 
 
-sample.concentrations
+sample.concentrations0
 
-sample.readings.w24 <- sample.readings.w24 %>%
-  add_column(K.ppm = sample.concentrations)
+sample.readings.0 <- sample.readings.0 %>%
+  add_column(K.ppm = sample.concentrations0)
 
-sample.readings.w24
+sample.readings.0
+
+```
+
+```{r}
+
+sample.readings.7 <- sample.readings %>%
+  filter(time..weeks. == 7)
+
+
+
+head(sample.readings.7)
+
+
+
+```
+
+```{r}
+
+sample.concentrations7 <- vector(mode = "numeric", length = length(sample.readings.7$reading))
+sample.concentrations7
+
+
+for (i in 1:length(sample.readings.7$reading)) {
+  K <- (sample.readings.7$reading - intercept7)/slope7
+  sample.concentrations7[i] <- K[i]
+  
+}
+
+
+sample.concentrations7
+
+sample.readings.7 <- sample.readings.7 %>%
+  add_column(K.ppm = sample.concentrations7)
+
+sample.readings.7
 
 ```
 
 
 ```{r}
 
-write.csv(sample.readings.w24, "K-results-w24.csv", row.names = F)
+sample.readings.24 <- sample.readings %>%
+  filter(time..weeks. == 24)
+
+
+
+head(sample.readings.24)
+
+
+
+```
+
+```{r}
+
+sample.concentrations24 <- vector(mode = "numeric", length = length(sample.readings.24$reading))
+sample.concentrations24
+
+
+for (i in 1:length(sample.readings.24$reading)) {
+  K <- (sample.readings.24$reading - intercept24)/slope24
+  sample.concentrations24[i] <- K[i]
+  
+}
+
+
+sample.concentrations24
+
+sample.readings.24 <- sample.readings.24 %>%
+  add_column(K.ppm = sample.concentrations24)
+
+sample.readings.24
+
+```
+
+```{r}
+
+sample.readings.comb <- rbind(sample.readings.0, sample.readings.7, sample.readings.24)
+
+write.csv(sample.readings.comb, "K-results-all.csv", row.names = F)
 
 
 ```
