@@ -86,7 +86,7 @@ for(i in 3:9){
           theme(panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i])))
  print(plot)
- ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".png"), plot = plot)
+ ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".jpeg"), plot = plot)
 }
 
 
@@ -106,7 +106,7 @@ for(i in 3:9){
           theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
  print(plot)
- #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".png"), plot = plot, height = 7, width = 9, units = "in")
+ #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
 }
 
 
