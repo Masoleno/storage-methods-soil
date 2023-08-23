@@ -29,11 +29,13 @@ tidyData <- read.csv("chemistry-data-tidy.csv")
 glimpse(tidyData)
 
 ```
+
 ```{r}
 
 summary(tidyData)
 
 ```
+
 ```{r}
 tidyData$Weeks <- as.factor(tidyData$Weeks)
 glimpse(tidyData)

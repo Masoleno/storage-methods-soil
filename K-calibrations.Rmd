@@ -35,14 +35,12 @@ loading libraries
 library(tidyverse)
 
 ```
+
 read in the calibration data
 ```{r}
 
-<<<<<<< HEAD
-cal.curve <- read.csv("K-calibration-week24.csv")
-=======
-cal.curve <- read.csv("K-calibration-curve-fresh.csv")
->>>>>>> 7b1b81abc67f1c5bd02594ea9e40849bb7117d13
+
+cal.curve <- read.csv("K-calibration-curves-combined.csv")
 
 
 cal.curve
