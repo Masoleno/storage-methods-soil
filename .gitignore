@@ -34,10 +34,11 @@ results/
 
 plots/
 
-#CSV files
+#CSV and image files
 *.csv
 
 *.png
+*.jpeg
 
 *.DS_Store
 
