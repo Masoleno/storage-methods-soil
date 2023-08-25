@@ -97,7 +97,7 @@ for(i in 3:9){
 Boxplots split into treatments - plot with tidyData to include week 0 or with plotdata to exclude it 
 ```{r}
 
-for(i in 3:9){
+for(i in 4:9){
   plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
           stat_boxplot(aes(Weeks, tidyData[,i]), geom = "errorbar") +
           geom_boxplot(aes(Weeks, tidyData[,i]), outlier.shape = NA, coef = 0) +
@@ -106,7 +106,7 @@ for(i in 3:9){
           theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
  print(plot)
- #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
+ ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
 }
 
 
@@ -124,7 +124,7 @@ for(i in 3:9){
           scale_y_continuous(limits = c(5.3, max(tidyData$pH)))
  print(pH_plot)
 
-#ggsave(file = "pH-boxplot.png", pH_plot, height = 7, width = 9, units = "in")
+ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
 
 
 ```
@@ -208,6 +208,6 @@ N_plot
 
 ```{r}
 
-ggsave(filename = "Nitrogen-linegraph.png", plot = N_plot,  width = 9, unit = "in")
+ggsave(filename = "Nitrogen-linegraph.jpeg", plot = N_plot,  width = 9, unit = "in")
 
 ```
