@@ -74,26 +74,9 @@ normality %>%
   group_by(Treatment, Weeks, variable)
 head(normality)
 
-# Normality testing without NA's doesn't make much difference 
-normality2 <-plotData %>%
-  group_by(Treatment,Weeks) %>%
-  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
-data.frame(normality2)
-normality2 %>%
-  group_by(Treatment, Weeks, variable)
-head(normality2)
-
-## This is neat but haven't figured out how to group it by treatment and weeks first.
-# lshap <- lapply(tidyData[3:9], shapiro.test)
-# 
-# lshap[[1]]
-# 
-# shap_res <- sapply(lshap, `[` , c("statistic", "p.value"))
-# t(shap_res)
 
 # Testing all variables for normality, grouped by Treatment and Weeks. 
 # This uses shapiro_test() from the rstatix package.
-
 
 # Fitting anova model with rstatix package ----
 ## pH ----
@@ -143,7 +126,7 @@ get_anova_table(NO2_mod)
 # Check for  rows with NA's in NH4 column
 tidyData[!complete.cases(tidyData$NH4),]
 
-# Removing rows where NH4 results are naff (dilution not done properly so concentration was outside calibration)
+# Removing rows where NH4 results are unusable (mistake with the dilution so concentration was outside calibration)
 NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
@@ -172,7 +155,6 @@ tail(K_data)
 # Run model
 K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
 get_anova_table(K_mod)
-
 
 # Post-hoc tests ----
 #### pH ----
@@ -372,34 +354,3 @@ K.owc <- data.frame(test = rep("K", nrow(K.one.way)), K.one.way)
 
 owc_results <- rbind(ph.owc, con.owc, NO3.owc, NO2.owc,NH4.owc, TON.owc, K.owc)
 write_csv(owc_results, "owc-results.csv")
-
-
-
-
-
-## Looping anovas - this is currently throwing an error - cba to fix ----
-
-# results_df <- data.frame(Column = character(),
-#                           F_value = numeric(),
-#                           P_value = numeric(),
-#                           p_significance_level = character(),
-#                           stringsAsFactors = FALSE)
-
-
-# for (col in 3:9) {
-# column <- names(tidyData[i])
-#   avz <- anova_test(tidyData, dv = tidyData[ , col], wid = Sample.ID, within = c(Treatment, Weeks))
-#   result <- get_anova_table(avz)
-#   f_value <- result[[1]][1, 4]
-#   p_value <- result[[1]][1, 5]
-#   p_significant <- result[[1]][1, 6]
-# 
-#   row <- data.frame(Column = column, F_value = f_value, P_value = p_value,
-#                   p_significance_level= p_significant, stringsAsFactors = FALSE)
-#   }
-#   
-#   cat("Repeated Measures Two-Way ANOVA for", col, ":\n")
-#   print(avz)
-#   cat("\n")
-# }
-###########################################

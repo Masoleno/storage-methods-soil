@@ -19,7 +19,7 @@ library(ggpubr)
 ```
 
 
-
+## Read in the data
 ```{r}
 
 chem_data <- read.csv("chemistry-data-raw.csv", na.strings = c(""))
@@ -39,7 +39,7 @@ str(chem_data)
 head(chem_data)
 
 ```
-
+## Converting time variable into factor
 ```{r}
 
 chem_data$Time..weeks. <- as.factor(chem_data$Time..weeks.)
@@ -51,8 +51,7 @@ chem_data$Time..weeks. <- as.factor(chem_data$Time..weeks.)
 str(chem_data)
 
 ```
-
-
+## Filter out irrelevant columns
 ```{r}
 
 chem_data_filtered <- chem_data %>%
@@ -61,7 +60,7 @@ chem_data_filtered <- chem_data %>%
 str(chem_data_filtered)
 ```
 
-Converting to numeric. Some NA's will be introduced where values are missing. 
+## Converting to numeric. Some NA's will be introduced where values are missing. 
 ```{r}
 
 chem_data_filtered <- chem_data_filtered %>%
@@ -123,7 +122,7 @@ head(chem_data_filtered)
 
 
 
-replacing negative values in the moisture and nitrate columns with 0. 
+## Replacing negative values in the moisture and nitrate columns with 0. 
 ```{r}
 
 chem_data_filtered <- chem_data_filtered%>% 
@@ -134,7 +133,7 @@ tail(chem_data_filtered, 20)
 ```
 
 
-
+## Save new data frame of tidy data for further analysis
 ```{r}
 
 write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE, na = "")

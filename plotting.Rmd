@@ -36,12 +36,13 @@ summary(tidyData)
 
 ```
 
+## Convert weeks to factor so it can be used to group the plots
 ```{r}
 tidyData$Weeks <- as.factor(tidyData$Weeks)
 glimpse(tidyData)
 ```
  
-Renaming columns so they're easier to write.
+## Renaming columns so they're easier to write.
 ```{r}
 
 tidyData<- tidyData %>% 
@@ -56,7 +57,6 @@ tidyData<- tidyData %>%
   )
 
 head(tidyData)
-
 
 ```
 
@@ -89,12 +89,11 @@ for(i in 3:9){
  ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".jpeg"), plot = plot)
 }
 
-
 ```
 
 
 
-Boxplots split into treatments - plot with tidyData to include week 0 or with plotdata to exclude it 
+Boxplots split into treatments
 ```{r}
 
 for(i in 4:9){
@@ -111,7 +110,7 @@ for(i in 4:9){
 
 
 ```
-
+## Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
 ```{r}
 
  pH_plot <- ggplot(tidyData, aes(x = Weeks, y = pH)) +
@@ -129,12 +128,9 @@ ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
 
 ```
 
-
-
-
+## Plotting Nitrogen line graph (fig. 7)
 Select only nitrogen data and assign to new dataframe
 ```{r}
-
 N_data <- tidyData %>%
   select(Sample.ID, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, `TON (mg/kg)`, Treatment, Weeks)
 
@@ -155,7 +151,7 @@ N_data <- N_data %>%
 N_data[!complete.cases(N_data), ]
 ```
 
-Make data into long format for plotting on line graph
+## Make data into long format for plotting on line graph
 ```{r}
 
 N_data_long <- N_data %>%
@@ -165,7 +161,7 @@ N_data_long <- N_data %>%
 
 head(N_data_long, 20)
 ```
-
+## Calculate summary statistics
 ```{r}
 
 summaryN <- N_data_long %>%
@@ -184,7 +180,7 @@ summaryN[!complete.cases(summaryN), ]
 
 ```
 
-
+## Make the plot (fig. 7)
 ```{r}
 
 
@@ -203,9 +199,7 @@ N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, shape = factor(`
 N_plot
 ```
 
-
-
-
+Save the plot as jpeg
 ```{r}
 
 ggsave(filename = "Nitrogen-linegraph.jpeg", plot = N_plot,  width = 9, unit = "in")

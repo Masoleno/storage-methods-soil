@@ -15,21 +15,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-loading libraries
+## Loading libraries
 ```{r}
 
 library(tidyverse)
@@ -41,17 +27,18 @@ font_import()
 
 read in the calibration data
 ```{r}
-
-
 cal.curve <- read.csv("K-calibration-curves-combined.csv")
 
 
 cal.curve
 
-
-str(cal.curve)
 ```
 
+```{r}
+
+str(cal.curve)
+
+```
 
 renaming column 1 in the dataset as R didn't like the format
 ```{r}
@@ -62,28 +49,7 @@ cal.curve <- cal.curve %>%
 
 ```
 
-plot the calbration curve
-```{r}
-
-cal.plot <- ggplot(data = cal.curve, aes(x = std.conc, y= reading)) +
-  geom_point()+
-  geom_smooth(method = lm, se= F, colour = "forestgreen") +
-  ylab("Photometer Reading") + xlab("Standard Concentration (ppm)") +
-  scale_colour_manual(values = c("cornflowerblue","darkgreen")) +
-  ggtitle("Calibration Curves Potassium") +
-  facet_wrap(.~week)
-  theme(
-		# get rid of grid and color background
-		# fill with nothing, black border
-		panel.background = element_rect(fill = NA, colour = 'black'),
-		panel.grid = element_blank(),
-		plot.title = element_text(hjust = 0.5))
-
-
-cal.plot
-
-```
-
+## Plot the calbration curve
 ```{r}
 week.labs <- c("Week 0", "Week 7", "Week 24")
 names(week.labs) <- c("0", "7", "24")
@@ -112,7 +78,7 @@ ggsave(filename = "K-cal-plot.jpeg", plot = cal.plot,  width = 8, height = 6, un
 
 ```
 
-
+## Using the linear model to calculate the K content of samples against each calibration curve
 ```{r}
 fresh.mod <- cal.curve %>%
   filter(week == 0)
@@ -213,8 +179,6 @@ sample.readings.0 <- sample.readings %>%
 
 
 head(sample.readings.0)
-
-
 
 ```
 
