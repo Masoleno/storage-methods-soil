@@ -184,7 +184,7 @@ summaryN[!complete.cases(summaryN), ]
 ```{r}
 
 
-N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, shape = factor(`Nitrogen compound`), group = `Nitrogen compound`)) +
+N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, color = factor(`Nitrogen compound`), group = `Nitrogen compound`)) +
   geom_line() +
   geom_point() +
   facet_wrap(~Treatment) +
@@ -196,7 +196,7 @@ N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, shape = factor(`
 
   
 
-N_plot
+N_plot + scale_color_manual(values = c("#E69F00", "#009E73",  "#56B4E9", "#D55E00"))
 ```
 
 Save the plot as jpeg
