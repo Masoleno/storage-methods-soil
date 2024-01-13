@@ -65,6 +65,8 @@ for (i in 3:9) {
   print(plot2)
 }
 
+# Testing all variables for normality, grouped by Treatment and Weeks. 
+# This uses shapiro_test() from the rstatix package.
 ### Shapiro-Wilks ----
 normality <-tidyData %>%
   group_by(Treatment,Weeks) %>%
@@ -75,8 +77,7 @@ normality %>%
 head(normality)
 
 
-# Testing all variables for normality, grouped by Treatment and Weeks. 
-# This uses shapiro_test() from the rstatix package.
+
 
 # Fitting anova model with rstatix package ----
 ## pH ----
