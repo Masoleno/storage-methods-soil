@@ -6,6 +6,7 @@ options(scipen = 999)
 library(tidyverse)
 library(gridExtra)
 library(rstatix)
+library(ggpubr)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
@@ -19,11 +20,9 @@ str(tidyData)
 tidyData<- tidyData %>% 
   rename(
     "NH4" = NH4..mg.kg.,
-    "TON" = TON..mg.kg.,
     "K" = K..mg.kg.,
     "NO2" = NO2..mg.kg.,
     "NO3" = NO3..mg.kg.,
-    "Conductivity" = Conductivity..mV.,
     "Moisture" = Moisture....
   )
 
@@ -36,8 +35,6 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 str(tidyData)
 
-
-
 # Testing for normality ----
 ### Plotting ----
 # Removing NAs for plotting
@@ -49,7 +46,7 @@ plotData[!complete.cases(plotData),]
 
 
 # Plotting histograms and qqplots
-for (i in 3:9) {
+for (i in 3:7) {
   plot1 <- ggplot(data = plotData, aes(sample = plotData[,i])) +
     geom_qq() +
     geom_qq_line(color="red") + 
@@ -65,19 +62,273 @@ for (i in 3:9) {
   print(plot2)
 }
 
+ggqqplot(tidyData, "pH", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "pH")
+  
+
+ggqqplot(tidyData, "NO3", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3")
+
+ggqqplot(tidyData, "NO2", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO2")
+
+ggqqplot(tidyData, "NH4", ggtheme = theme_bw()) +
+facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4")
+
+ggqqplot(tidyData, "K", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "K")
+
 # Testing all variables for normality, grouped by Treatment and Weeks. 
 # This uses shapiro_test() from the rstatix package.
 ### Shapiro-Wilks ----
-normality <-tidyData %>%
+normality <-tidyData%>%
   group_by(Treatment,Weeks) %>%
-  shapiro_test(pH, Conductivity, NO3, NO2, NH4, TON, K)
+  shapiro_test(pH, NO3, NO2, NH4, K)
 data.frame(normality)
 normality %>%
   group_by(Treatment, Weeks, variable)
 head(normality)
 
 
+# Removing extreme outliers (as defined by the 'identify_outlier' function in rstatix (values above Q3 + 3xIQR or below Q1 - 3xIQR )) ----
+# Code adapted from https://www.geeksforgeeks.org/how-to-remove-outliers-from-multiple-columns-in-r-dataframe/
+## Checking for outliers ----
+pH_outlier <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(pH)
+data.frame(pH_outlier)
 
+NO3_outlier <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(NO3)
+data.frame(NO3_outlier)
+
+NO2_outlier <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(NO2)
+data.frame(NO2_outlier)
+
+NH4_outlier <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(NH4)
+data.frame(NH4_outlier)
+
+K_outlier <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  identify_outliers(K)
+data.frame(K_outlier)
+
+## Removing outliers and re-testing normality ----
+detect_outlier <- function(x) {
+  # calculate first quantile
+  quantile1 <- quantile(x, probs = .25, na.rm = TRUE)
+  
+  # calculate third quantile
+  quantile3 <- quantile(x, probs = 0.75, na.rm = TRUE)
+  
+  # calculate interquartile range
+  iqr <- IQR(x, na.rm = TRUE)
+  
+  # return TRUE or FALSE
+  x > quantile3 + (iqr * 3) | x < quantile1 - (iqr * 3)
+}
+
+remove_outlier <- function(dataframe, columns = names(dataframe)) {
+  
+  # for loop to traverse in columns vector
+  for (col in columns) {
+    
+    # remove observation if it satisfies outlier function
+    dataframe <- dataframe[!detect_outlier(dataframe[[col]]), ]
+  }
+  
+  # return dataframe
+  print("Remove outliers")
+  print(dataframe)
+}
+
+# Test data with outliers removed for normality again 
+no_outlier_data <- remove_outlier(tidyData, c("pH", "NO3", "NO2", "NH4", "K"))
+
+no_outlier_data <- drop_na(no_outlier_data)
+
+normality2 <-no_outlier_data%>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH, NO3, NO2, NH4, K)
+data.frame(normality2)
+normality2 %>%
+  group_by(Treatment, Weeks, variable)
+head(normality2)
+# Too many data points are removed from the week 24 groups for this to be a valid option, especially since some data still
+# violates the normality assumption
+
+# Transforming data and re-testing normality ----
+### Log10 transformation
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(pH_log10 = log10(pH + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO3_log10 = log10(NO3 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO2_log10 = log10(NO2 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NH4_log10= log10(NH4 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(K_log10 = log10(K + 1))
+
+### Square root transformation
+tidyData <- tidyData %>%
+    group_by(Treatment, Weeks) %>%
+    mutate(pH_sqrt = sqrt(pH))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO3_sqrt = sqrt(NO3))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO2_sqrt = sqrt(NO2))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NH4_sqrt= sqrt(NH4))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(K_sqrt = sqrt(K))
+
+### Natural log transformation
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(pH_log = log(pH + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO3_log = log(NO3 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NO2_log = log(NO2 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(NH4_log = log(NH4 + 1))
+
+tidyData <- tidyData %>%
+  group_by(Treatment, Weeks) %>%
+  mutate(K_log = log(K + 1))
+
+### Testing log10 transformed data for normality ----
+normality3 <-tidyData%>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH_log10, NO3_log10, NO2_log10, NH4_log10, K_log10)
+data.frame(normality3)
+normality3 %>%
+  group_by(Treatment, Weeks, variable)
+head(normality3)
+
+ggqqplot(tidyData, "pH_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "pH_log10")
+
+
+ggqqplot(tidyData, "NO3_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3_log10")
+
+gghistogram(tidyData, "NO3_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3_log10")
+
+ggqqplot(tidyData, "NO2_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO2_log10")
+
+ggqqplot(tidyData, "NH4_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4_log10")
+
+gghistogram(tidyData, "NH4_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4_log10")
+
+ggqqplot(tidyData, "K_log10", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "K_log10")
+
+
+### Testing sqrt transformed data for normality ----
+normality4 <-tidyData%>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH_sqrt, NO3_sqrt, NO2_sqrt, NH4_sqrt, K_sqrt)
+data.frame(normality4)
+normality4 %>%
+  group_by(Treatment, Weeks, variable)
+head(normality4)
+
+ggqqplot(tidyData, "pH_sqrt", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "pH_sqrt")
+
+
+ggqqplot(tidyData, "NO3_sqrt", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3_sqrt")
+
+ggqqplot(tidyData, "NO2_sqrt", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO2_sqrt")
+
+ggqqplot(tidyData, "NH4_sqrt", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4_sqrt")
+
+ggqqplot(tidyData, "K_sqrt", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "K_sqrt")
+
+### Testing natural log transformed data for normality
+normality5 <-tidyData%>%
+  group_by(Treatment,Weeks) %>%
+  shapiro_test(pH_log, NO3_log, NO2_log, NH4_log, K_log)
+data.frame(normality5)
+normality5 %>%
+  group_by(Treatment, Weeks, variable)
+head(normality5)
+
+ggqqplot(tidyData, "pH_log", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "pH_log")
+
+
+ggqqplot(tidyData, "NO3_log", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3_log")
+
+ggqqplot(tidyData, "NO2_log", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO2_log")
+
+ggqqplot(tidyData, "NH4_log", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4_log")
+
+ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "K_log")
 
 # Fitting anova model with rstatix package ----
 ## pH ----
@@ -85,17 +336,10 @@ head(normality)
 tidyData[!complete.cases(tidyData$pH),]
 
 # Run model
-pH_mod <- anova_test(data = tidyData, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks))
+pH_mod <- anova_test(data = tidyData, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically applies "Greenhouse-Geisser 
 # sphericity correction" on any factors that violate this assumption
-
-## Conductivity ----
-# Check for rows with NA's in Conductivity column
-tidyData[!complete.cases(tidyData$Conductivity),]
-
-# Run model
-cond_mod <- anova_test(data = tidyData, dv = Conductivity, wid = Sample.ID, within = c(Treatment, Weeks))
-get_anova_table(cond_mod) 
+print(pH_mod)
 
 ## NO3 ----
 # Check for  rows with NA's in NO3 column
