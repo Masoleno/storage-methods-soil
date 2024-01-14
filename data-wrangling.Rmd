@@ -55,7 +55,7 @@ str(chem_data)
 ```{r}
 
 chem_data_filtered <- chem_data %>%
-  select(Sample.ID, moisture...., pH:Time..weeks.)
+  select(Sample.ID, moisture...., pH, NO3..mg.kg.:Time..weeks.)
 
 str(chem_data_filtered)
 ```
@@ -64,7 +64,7 @@ str(chem_data_filtered)
 ```{r}
 
 chem_data_filtered <- chem_data_filtered %>%
-  mutate_at(c("NO3..mg.kg.", "NO2..mg.kg.", "K..mg.kg."), as.numeric)
+  mutate_at(c("NO3..mg.kg.", "NO2..mg.kg.", "K..mg.kg."), as.double)
 
 ```
 
@@ -110,7 +110,6 @@ chem_data_filtered<- chem_data_filtered %>%
    "K (mg/kg)" = K..mg.kg.,
    "NO2 (mg/kg)" = NO2..mg.kg.,
    "NO3 (mg/kg)" = NO3..mg.kg.,
-   "Conductivity (mV)" = conductivity..mV.,
    "Moisture (%)" = moisture....,
    "Weeks" = Time..weeks.
   )
