@@ -122,14 +122,83 @@ chem_data_filtered <- chem_data_filtered%>%
 
 tail(chem_data_filtered, 20)
 ```
-
-
 ## Save new data frame of tidy data for further analysis
 ```{r}
 
 write_csv(chem_data_filtered, "chemistry-data-tidy.csv", col_names = TRUE, na = "")
 
 ```
+
+
+Filtering out only the dry treatment data for calculating wet weights based on moisture
+```{r}
+
+dryData <- chem_data_filtered %>%
+  filter(Treatment == "Dry")
+
+```
+
+Read in csv file with excact weights for each sample aliqout (these are dry weigths for the "Dry" category samples)
+```{r}
+
+weights <- read.csv("test-weights.csv")
+
+```
+
+Filter out only the weights for the Dry samples
+```{r}
+
+dryWeights <- weights %>%
+  filter(Treatment == "Dry") %>%
+  select(Sample.ID, X3g, X5g.K, X5g.NP, Treatment, Time..weeks. )
+
+head(dryWeights)
+```
+Renaming columns
+```{r}
+dryWeights<- dryWeights %>% 
+  rename(
+   "3g" = X3g,
+   "5g.K" = X5g.K,
+   "5g.N" = X5g.NP,
+   "Weeks" = Time..weeks.
+  )
+
+head(dryWeights)
+```
+
+```{r}
+str(dryWeights)
+```
+
+```{r}
+
+dryWeights$Weeks <- as.factor(dryWeights$Weeks)
+
+str(dryWeights)
+```
+Combined the dry test weights with the rest of the data
+```{r}
+
+dryDataComb <- full_join(dryData, dryWeights, by = c("Sample.ID", "Treatment", "Weeks"))
+str(dryDataComb)
+```
+Calculate the equivalent wet weight for each sample based on the lost moisture
+```{r}
+
+dryDataComb <- dplyr::mutate(dryDataComb, wetWeightK = ((`Moisture (%)`/100)*`5g.K`)+`5g.K`)
+
+```
+
+```{r}
+
+dryDataComb <- dplyr::mutate(dryDataComb, wetWeightN = ((`Moisture (%)`/100)*`5g.N`)+`5g.N`)
+
+```
+
+
+
+
 
 
 
