@@ -198,7 +198,84 @@ dryDataComb <- dplyr::mutate(dryDataComb, wetWeightN = ((`Moisture (%)`/100)*`5g
 
 
 
+```{r}
+
+rawNutrients <- read.csv("raw-nutrient-output.csv", na.strings = c(""))
 
 
+str(rawNutrients)
+
+```
+
+```{r}
+
+dryNutri <- rawNutrients %>%
+  filter(Treatment == "Dry") 
+
+str(dryNutri)
+```
+
+```{r}
+dryNutri$Weeks <- as.factor(dryNutri$Weeks)
+
+str(dryNutri)
+
+```
+
+```{r}
+dryNutri<- dryNutri %>% 
+ rename(
+   "NH4 (mg/l)" = NH4..mg.l.,
+   "K (mg/l)" = K..mg.l.,
+   "NO2 (mg/l)" = NO2.as.N...mg.l.,
+   "NO3 (mg/l)" = NO3.as.N..mg.l.,
+  )
+
+head(dryNutri)
+```
+
+```{r}
+
+dryDataFinal <- full_join(dryDataComb, dryNutri, by = c("Sample.ID", "Treatment", "Weeks"))
+
+dryDataFinal <- select(dryDataFinal, Sample.ID, Treatment, Weeks, wetWeightK:`K (mg/l)`)
+
+dryDataFinal <- dryDataFinal %>%
+                  filter(Weeks != "0")
+
+str(dryDataFinal)
+```
 
 
+```{r}
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, soil.in.1L.N = wetWeightN*50)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, soil.in.1L.K = wetWeightK*50)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, dilutionFactorN = 1000/soil.in.1L.N)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, dilutionFactorK = 1000/soil.in.1L.K)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, `NO3 (mg/kg) dry` = `NO3 (mg/l)`*dilutionFactorN)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, `NH4 (mg/kg) dry` = `NH4 (mg/l)`*dilutionFactorN)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, `K (mg/kg) dry` = `K (mg/l)`*dilutionFactorK)
+
+str(dryDataFinal)
+```
+
+```{r}
+
+dryDataFinal <- dryDataFinal %>% 
+                  mutate_if(is.numeric, ~round(., 2))
+
+```
+
+
+```{r}
+
+write_csv(dryDataFinal, "nutrients-dry-backCalculated.csv", col_names = TRUE, na = "")
+
+```
