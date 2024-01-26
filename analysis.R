@@ -362,6 +362,13 @@ pH_resids <- pH_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 pH_res_nor <- shapiro.test(pH_resids)
 
+pH_aov_log <- aov(pH_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
+summary(pH_aov_log)
+pH_resids_log <- pH_aov_log$`Sample.ID:Treatment:Weeks`$residuals
+
+pH_res_log_nor <- shapiro.test(pH_resids_log)
+pH_res_log_nor
+
 ## NO3 ----
 # Check for  rows with NA's in NO3 column
 tidyData[!complete.cases(tidyData$NO3),]
@@ -376,11 +383,19 @@ NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Tre
 get_anova_table(NO3_mod)
 print(NO3_mod)
 
-NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
+NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO3_data)
 summary(NO3_aov)
 NO3_resids <- NO3_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 NO3_res_nor <- shapiro.test(NO3_resids)
+NO3_res_nor
+
+NO3_aov_log <- aov(NO3_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO3_data)
+summary(NO3_aov_log)
+NO3_resids_log <- NO3_aov_log$`Sample.ID:Treatment:Weeks`$residuals
+
+NO3_res_log_nor <- shapiro.test(NO3_resids_log)
+NO3_res_log_nor
 
 ## NO2 ----
 # Check for  rows with NA's in NO2 column
@@ -402,6 +417,13 @@ NO2_resids <- NO2_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 NO2_res_nor <- shapiro.test(NO2_resids)
 
+NO2_aov_log <- aov(NO2_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO2_data)
+summary(NO2_aov_log)
+NO2_resids_log <- NO2_aov_log$`Sample.ID:Treatment:Weeks`$residuals
+
+NO2_res_log_nor <- shapiro.test(NO2_resids_log)
+NO2_res_log_nor
+
 ## NH4----
 # Check for  rows with NA's in NH4 column
 tidyData[!complete.cases(tidyData$NH4),]
@@ -421,12 +443,12 @@ NH4_resids <- NH4_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 NH4_res_nor <- shapiro.test(NH4_resids)
 
-NH4_aov2 <- aov(NH4_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
-summary(NH4_aov2)
-NH4_resids2 <- NH4_aov2$`Sample.ID:Treatment:Weeks`$residuals
+NH4_aov_log <- aov(NH4_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
+summary(NH4_aov_log)
+NH4_resids_log <- NH4_aov_log$`Sample.ID:Treatment:Weeks`$residuals
 
-NH4_res_nor2 <- shapiro.test(NH4_resids2)
-NH4_res_nor2 
+NH4_res_log_nor <- shapiro.test(NH4_resids_log)
+NH4_res_log_nor 
 
 ## K ----
 # Check for  rows with NA's in K column
@@ -448,6 +470,14 @@ summary(K_aov)
 K_resids <- K_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 K_res_nor <- shapiro.test(K_resids)
+
+K_aov_log <- aov(K_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
+summary(K_aov_log)
+K_resids_log <- K_aov_log$`Sample.ID:Treatment:Weeks`$residuals
+
+K_res_log_nor <- shapiro.test(K_resids_log)
+K_res_log_nor 
+
 
 pH_res_nor
 NO3_res_nor
