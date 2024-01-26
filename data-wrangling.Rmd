@@ -197,7 +197,7 @@ dryDataComb <- dplyr::mutate(dryDataComb, wetWeightN = ((`Moisture (%)`/100)*`5g
 ```
 
 
-
+Read in the raw nutrient results from the discrete analyser (in mg/l)
 ```{r}
 
 rawNutrients <- read.csv("raw-nutrient-output.csv", na.strings = c(""))
@@ -258,6 +258,8 @@ dryDataFinal <- dplyr::mutate(dryDataFinal, dilutionFactorN = 1000/soil.in.1L.N)
 dryDataFinal <- dplyr::mutate(dryDataFinal, dilutionFactorK = 1000/soil.in.1L.K)
 
 dryDataFinal <- dplyr::mutate(dryDataFinal, `NO3 (mg/kg) dry` = `NO3 (mg/l)`*dilutionFactorN)
+
+dryDataFinal <- dplyr::mutate(dryDataFinal, `NO2 (mg/kg) dry` = `NO2 (mg/l)`*dilutionFactorN)
 
 dryDataFinal <- dplyr::mutate(dryDataFinal, `NH4 (mg/kg) dry` = `NH4 (mg/l)`*dilutionFactorN)
 
