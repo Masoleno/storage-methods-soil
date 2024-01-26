@@ -10,7 +10,7 @@ library(ggpubr)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
-tidyData <- read.csv("chemistry-data-tidy.csv")
+tidyData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
 
 # Look at the data
 head(tidyData)
@@ -35,49 +35,58 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 str(tidyData)
 
+tidyData <- tidyData%>% 
+  mutate(across(c(Moisture, NO3:NH4), ~ ifelse(.x<0, 0, .x)))
+
+
+tail(tidyData, 20)
+
+# Show data summary to extract mean moisture content (%) for reporting in manuscript
+tidyData %>%
+  dplyr::filter(Treatment == "Fridge", Weeks == "0") %>%
+  summary()
+
 # Testing for normality ----
 ### Plotting ----
-# Removing NAs for plotting
-
-plotData <- tidyData %>%
-  na.omit()
-
-plotData[!complete.cases(plotData),]
-
 
 # Plotting histograms and qqplots
-for (i in 3:7) {
-  plot1 <- ggplot(data = plotData, aes(sample = plotData[,i])) +
-    geom_qq() +
-    geom_qq_line(color="red") + 
-    labs(title = colnames(plotData[i])) +
-    facet_wrap(Treatment~Weeks, scales = "free_y")
-  print(plot1)
-  
-  plot2 <- ggplot(data = plotData, aes(plotData[, i])) +
-    geom_histogram(binwidth = i) + # NO2 and pH histograms need different binwidths 
-    # so will have to tweak this or plot outside of loop. But qqplots are fine
-    labs(title = colnames(plotData[i])) +
-    facet_wrap(Treatment~Weeks, scales = "free_y")
-  print(plot2)
-}
+#pH
+gghistogram(tidyData, "pH", ggtheme = theme_bw(), bins = 10) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "pH")
 
 ggqqplot(tidyData, "pH", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "pH")
-  
+
+# NO3 
+gghistogram(tidyData, "NO3", ggtheme = theme_bw(), bins = 10) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO3")
 
 ggqqplot(tidyData, "NO3", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "NO3")
+# NO2
+gghistogram(tidyData, "NO2", ggtheme = theme_bw(), bins = 10) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NO2")
 
 ggqqplot(tidyData, "NO2", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "NO2")
+# NH4
+gghistogram(tidyData, "NH4", ggtheme = theme_bw(), bins = 10) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "NH4")
 
 ggqqplot(tidyData, "NH4", ggtheme = theme_bw()) +
 facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "NH4")
+# K
+gghistogram(tidyData, "K", ggtheme = theme_bw(), bins = 10) +
+  facet_grid(Weeks~Treatment, labeller = "label_both") +
+  labs(title = "K")
 
 ggqqplot(tidyData, "K", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
@@ -94,6 +103,7 @@ normality %>%
   group_by(Treatment, Weeks, variable)
 head(normality)
 
+normality$p <- round(normality$p, 4)
 
 # Removing extreme outliers (as defined by the 'identify_outlier' function in rstatix (values above Q3 + 3xIQR or below Q1 - 3xIQR )) ----
 # Code adapted from https://www.geeksforgeeks.org/how-to-remove-outliers-from-multiple-columns-in-r-dataframe/
@@ -164,6 +174,9 @@ data.frame(normality2)
 normality2 %>%
   group_by(Treatment, Weeks, variable)
 head(normality2)
+
+normality2$p <- round(normality2$p, 4)
+
 # Too many data points are removed from the week 24 groups for this to be a valid option, especially since some data still
 # violates the normality assumption
 
@@ -330,6 +343,8 @@ ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "K_log")
 
+
+
 # Fitting anova model with rstatix package ----
 ## pH ----
 # Check for rows with NA's in pH column
@@ -341,6 +356,12 @@ get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically ap
 # sphericity correction" on any factors that violate this assumption
 print(pH_mod)
 
+pH_aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
+summary(pH_aov)
+pH_resids <- pH_aov$`Sample.ID:Treatment:Weeks`$residuals
+
+pH_res_nor <- shapiro.test(pH_resids)
+
 ## NO3 ----
 # Check for  rows with NA's in NO3 column
 tidyData[!complete.cases(tidyData$NO3),]
@@ -351,8 +372,15 @@ NO3_data <- tidyData %>%
 head(NO3_data)
 
 # Run model
-NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks))
+NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NO3_mod)
+print(NO3_mod)
+
+NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
+summary(NO3_aov)
+NO3_resids <- NO3_aov$`Sample.ID:Treatment:Weeks`$residuals
+
+NO3_res_nor <- shapiro.test(NO3_resids)
 
 ## NO2 ----
 # Check for  rows with NA's in NO2 column
@@ -364,8 +392,15 @@ NO2_data <- tidyData %>%
 head(NO2_data)
 
 # Run model
-NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks))
+NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NO2_mod)
+print(NO2_mod)
+
+NO2_aov <- aov(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO2_data)
+summary(NO2_aov)
+NO2_resids <- NO2_aov$`Sample.ID:Treatment:Weeks`$residuals
+
+NO2_res_nor <- shapiro.test(NO2_resids)
 
 ## NH4----
 # Check for  rows with NA's in NH4 column
@@ -376,16 +411,22 @@ NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
 # Run model
-NH4_mod <- anova_test(data = NH4_data, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks))
+NH4_mod <- anova_test(data = NH4_data, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NH4_mod)
+print(NH4_mod)
 
-## TON ----
-# Check for  rows with NA's in TON column
-tidyData[!complete.cases(tidyData$TON),]
+NH4_aov <- aov(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
+summary(NH4_aov)
+NH4_resids <- NH4_aov$`Sample.ID:Treatment:Weeks`$residuals
 
-# Run model
-TON_mod <- anova_test(data = tidyData, dv = TON, wid = Sample.ID, within = c(Treatment, Weeks))
-get_anova_table(TON_mod)
+NH4_res_nor <- shapiro.test(NH4_resids)
+
+NH4_aov2 <- aov(NH4_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
+summary(NH4_aov2)
+NH4_resids2 <- NH4_aov2$`Sample.ID:Treatment:Weeks`$residuals
+
+NH4_res_nor2 <- shapiro.test(NH4_resids2)
+NH4_res_nor2 
 
 ## K ----
 # Check for  rows with NA's in K column
@@ -398,8 +439,21 @@ head(K_data)
 tail(K_data)
 
 # Run model
-K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks))
+K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(K_mod)
+print(K_mod)
+
+K_aov <- aov(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
+summary(K_aov)
+K_resids <- K_aov$`Sample.ID:Treatment:Weeks`$residuals
+
+K_res_nor <- shapiro.test(K_resids)
+
+pH_res_nor
+NO3_res_nor
+NO2_res_nor
+NH4_res_nor
+K_res_nor
 
 # Post-hoc tests ----
 #### pH ----
