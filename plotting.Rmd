@@ -23,16 +23,19 @@ library(gridExtra)
 
 tidyData <- read.csv("chemistry-data-tidy.csv")
 
-```
-
-```{r}
-glimpse(tidyData)
+# Read in the same data but with nutrients for the dry treatment reported as mg/kg wet weight
+dryData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
 
 ```
 
 ```{r}
+str(dryData)
 
-summary(tidyData)
+```
+
+```{r}
+
+str(tidyData)
 
 ```
 
@@ -41,18 +44,22 @@ summary(tidyData)
 tidyData$Weeks <- as.factor(tidyData$Weeks)
 glimpse(tidyData)
 ```
- 
+
+```{r}
+dryData$Weeks <- as.factor(dryData$Weeks)
+str(dryData)
+```
+
+
 ## Renaming columns so they're easier to write.
 ```{r}
 
 tidyData<- tidyData %>% 
   rename(
    "NH4 (mg/kg)" = NH4..mg.kg.,
-   "TON (mg/kg)" = TON..mg.kg.,
    "K (mg/kg)" = K..mg.kg.,
    "NO2 (mg/kg)" = NO2..mg.kg.,
    "NO3 (mg/kg)" = NO3..mg.kg.,
-   "Conductivity (mV)" = Conductivity..mV.,
    "Moisture (%)" = Moisture....
   )
 
@@ -60,11 +67,35 @@ head(tidyData)
 
 ```
 
+```{r}
+
+dryData<- dryData %>% 
+  rename(
+   "NH4 (mg/kg)" = NH4..mg.kg.,
+   "K (mg/kg)" = K..mg.kg.,
+   "NO2 (mg/kg)" = NO2..mg.kg.,
+   "NO3 (mg/kg)" = NO3..mg.kg.,
+   "Moisture (%)" = Moisture....
+  )
+
+head(dryData)
+
+```
+## Replacing negative values in the moisture and nitrate columns with 0. 
+```{r}
+
+dryData <- dryData %>% 
+  mutate(across(c(`Moisture (%)`, `NO3 (mg/kg)`:`NH4 (mg/kg)`), ~ ifelse(.x<0, 0, .x)))
+
+
+tail(dryData, 20)
+```
+
 
 ## Make frequency historgrams
 ```{r}
 
-for (i in 2:9) {
+for (i in 3:7) {
   plot1 <- ggplot(tidyData, aes(tidyData[,i])) +
     geom_histogram() +
     labs(x = colnames(tidyData[i]))
@@ -72,31 +103,22 @@ for (i in 2:9) {
   
 }
 ```
-
-
-## Make boxplots
+Same but with the dry-corrected data
 ```{r}
 
-for(i in 3:9){
-  plot <- ggplot(tidyData, aes(x = Treatment, y = tidyData[,i], fill = Weeks)) +
-          stat_boxplot(aes(Treatment, tidyData[,i]), geom = "errorbar") +
-          geom_boxplot(aes(Treatment, tidyData[,i]), outlier.shape = NA, coef = 0) +
-          ylab(colnames(tidyData[i])) +
-          labs(fill = "Time (weeks)" ) +
-          theme(panel.background = element_rect(fill = NA, colour = 'black')) +
-          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i])))
- print(plot)
- ggsave(file = paste0("boxplot_", colnames(tidyData[i]), ".jpeg"), plot = plot)
+for (i in 3:7) {
+  plot2 <- ggplot(dryData, aes(dryData[,i])) +
+    geom_histogram() +
+    labs(x = colnames(dryData[i]))
+  print(plot2)
+  
 }
-
 ```
 
-
-
-Boxplots split into treatments
+Make boxplots
 ```{r}
 
-for(i in 4:9){
+for(i in 4:7){
   plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
           stat_boxplot(aes(Weeks, tidyData[,i]), geom = "errorbar") +
           geom_boxplot(aes(Weeks, tidyData[,i]), outlier.shape = NA, coef = 0) +
@@ -105,12 +127,31 @@ for(i in 4:9){
           theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
  print(plot)
- ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
+ #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
 }
 
 
 ```
-## Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
+Same with the dry-corrected data
+```{r}
+
+for(i in 4:7){
+  plot <- ggplot(dryData, aes(x = Weeks, y = dryData[,i])) +
+          stat_boxplot(aes(Weeks, dryData[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, dryData[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(dryData[i])) +
+          facet_wrap(.~Treatment) +
+          theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
+          scale_y_continuous(limits = c(min(dryData[,i]), max(dryData[,i]))) 
+ print(plot)
+ #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
+}
+
+
+```
+
+
+Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
 ```{r}
 
  pH_plot <- ggplot(tidyData, aes(x = Weeks, y = pH)) +
@@ -123,16 +164,35 @@ for(i in 4:9){
           scale_y_continuous(limits = c(5.3, max(tidyData$pH)))
  print(pH_plot)
 
-ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
+#ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
 
 
 ```
 
+And with the dry corrected
+```{r}
+
+ pH_plot2 <- ggplot(dryData, aes(x = Weeks, y = pH)) +
+          stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
+          ylab("pH") +
+          facet_wrap(.~Treatment) +
+          theme(text = element_text(family = "Arial", size = 16), 
+                panel.background = element_rect(fill = NA, colour ='black')) +
+          scale_y_continuous(limits = c(5.3, max(dryData$pH)))
+ print(pH_plot2)
+
+#ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
+
+
+```
+
+
 ## Plotting Nitrogen line graph (fig. 7)
 Select only nitrogen data and assign to new dataframe
 ```{r}
-N_data <- tidyData %>%
-  select(Sample.ID, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, `TON (mg/kg)`, Treatment, Weeks)
+N_data <- dryData %>%
+  select(Sample.ID, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, Treatment, Weeks)
 
 head(N_data)
 ```
@@ -155,7 +215,7 @@ N_data[!complete.cases(N_data), ]
 ```{r}
 
 N_data_long <- N_data %>%
-  pivot_longer(cols = `NO3 (mg/kg)`:`TON (mg/kg)`,
+  pivot_longer(cols = `NO3 (mg/kg)`:`NH4 (mg/kg)`,
                names_to = "Nitrogen compound",
                values_to = "Concentration (mg/kg)")
 
@@ -192,11 +252,11 @@ N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, color = factor(`
            panel.grid.minor = element_blank(), legend.title = element_text(size = 12), 
            legend.position = "bottom") +
   labs(x = "Time (weeks)", y = "Mean concentration (mg/kg)", shape = "Nitrogen form") +
-  scale_color_discrete(labels = c("NH4", "NO2", "NO3", "TON"))
+  scale_color_discrete(labels = c("NH4", "NO2", "NO3"))
 
   
 
-N_plot + scale_color_manual(values = c("#E69F00", "#009E73",  "#56B4E9", "#D55E00"))
+N_plot + scale_color_manual(values = c("#E69F00", "#009E73",  "#56B4E9"))
 ```
 
 Save the plot as jpeg
