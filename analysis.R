@@ -5,11 +5,10 @@ options(scipen = 999)
 # Load libraries ----
 library(tidyverse)
 library(gridExtra)
-library(afex)
+library(afex) # afex loads lme4 as a required package
 library(ggpubr)
-library(lme4)
+library(rstatix) #used for normality testing using shapiro_test()
 library(car)
-
 
 # Read in csv file created at the end of the data-wrangling script ----
 tidyData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
@@ -136,6 +135,8 @@ K_outlier <- tidyData %>%
 data.frame(K_outlier)
 
 ## Removing outliers and re-testing normality ----
+# Too many data points are removed from the week 24 groups for this to be a valid option, especially since some data still
+# violates the normality assumption
 detect_outlier <- function(x) {
   # calculate first quantile
   quantile1 <- quantile(x, probs = .25, na.rm = TRUE)
@@ -179,8 +180,8 @@ head(normality2)
 
 normality2$p <- round(normality2$p, 4)
 
-# Too many data points are removed from the week 24 groups for this to be a valid option, especially since some data still
-# violates the normality assumption
+
+
 
 
 # Transforming data and re-testing normality ----
@@ -356,18 +357,22 @@ tidyData[!complete.cases(tidyData$pH),]
 
 # Run model
 # using afex
-pH.test <- afex::aov_car(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
-pH.test
-summary(pH.test)
+pH.aov <- afex::aov_car(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), correction = "HF", data = tidyData)
+pH.aov
+summary(pH.aov)
 
-resids <- residuals(pH.test, append = TRUE)
+pH.resids <- residuals(pH.aov)
 
-shapiro.test(resids$.residuals)
+shapiro.test(pH.resids)
 
 #using lme
 
+pH.lme <- lme4::lmer(pH ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(pH.lme)
+Anova(pH.lme, type = 3)
 
-
+shapiro.test(residuals(pH.lme))
+ggqqplot(resid(pH.lme))
 
 ## NO3 ----
 # Check for  rows with NA's in NO3 column
@@ -379,7 +384,8 @@ NO3_data <- tidyData %>%
 head(NO3_data)
 
 # Run model
-NO3.test <- afex::aov_car(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+# Using afex
+NO3.test <- afex::aov_car(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO3_data)
 NO3.test
 summary(NO3.test)
 
@@ -387,9 +393,13 @@ NO3.resids <- residuals(NO3.test, append = TRUE)
 
 shapiro.test(NO3.resids$.residuals)
 
+# Using lme
+NO3.lme <- lme4::lmer(NO3 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO3.lme)
+Anova(NO3.lme, type = 3)
 
-
-
+shapiro.test(residuals(NO3.lme))
+ggqqplot(resid(NO3.lme))
 
 ## NO2 ----
 # Check for  rows with NA's in NO2 column
@@ -402,17 +412,22 @@ head(NO2_data)
 
 # Run model
 # Using afex
-NO2.test <- afex::aov_car(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+NO2.test <- afex::aov_car(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO2_data)
 NO2.test
 summary(NO2.test)
 
 NO2.resids <- residuals(NO2.test, append = TRUE)
 
 shapiro.test(NO2.resids$.residuals)
+ggqqplot(NO2.resids$.residuals)
 
 # Using lme
+NO2.lme <- lme4::lmer(NO2 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO2.lme)
+Anova(NO2.lme, type = 3)
 
-
+shapiro.test(residuals(NO2.lme))
+ggqqplot(resid(NO2.lme))
 
 ## NH4----
 # Check for  rows with NA's in NH4 column
@@ -424,17 +439,22 @@ NH4_data <- tidyData %>%
 
 # Run model
 # Using afex
-NH4.test <- afex::aov_car(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+NH4.test <- afex::aov_car(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NH4_data)
 NH4.test
 summary(NH4.test)
 
 NH4.resids <- residuals(NH4.test, append = TRUE)
 
 shapiro.test(NH4.resids$.residuals)
+ggqqplot((NH4.resids$.residuals))
 
 # Using lme
+NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NH4.lme)
+Anova(NH4.lme, type = 3)
 
-
+shapiro.test(residuals(NH4.lme))
+ggqqplot(resid(NH4.lme))
 
 ## K ----
 # Check for  rows with NA's in K column
@@ -448,7 +468,7 @@ tail(K_data)
 
 # Run model
 # Using afex
-K.test <- afex::aov_car(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
+K.test <- afex::aov_car(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = K_data)
 K.test
 summary(K.test)
 
@@ -457,8 +477,12 @@ K.resids <- residuals(K.test, append = TRUE)
 shapiro.test(K.resids$.residuals)
 
 # Using lme
+K.lme <- lme4::lmer(K ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(K.lme)
+Anova(K.lme, type = 3)
 
-
+shapiro.test(residuals(K.lme))
+ggqqplot(resid(K.lme))
 
 # Post-hoc tests ----
 #### pH ----
