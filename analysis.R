@@ -355,23 +355,7 @@ ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
 tidyData[!complete.cases(tidyData$pH),]
 
 # Run model
-pH_mod <- anova_test(data = tidyData, dv = pH, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically applies "Greenhouse-Geisser 
-# sphericity correction" on any factors that violate this assumption
-print(pH_mod)
-
-# Retrieve residuals from the anova_test() model and test for normality
-pH.residuals <- residuals(attr(pH_mod, "args")$model)
-shapiro.test(pH.residuals)
-
-
-
-pH_mod_log10 <- anova_test(data = tidyData, dv = pH_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-print(pH_mod_log10)
-
-pH_log10_residuals <- residuals(attr(pH_mod_log10, "args")$model)
-shapiro.test(pH_log10_residuals)
-
+# using afex
 pH.test <- afex::aov_car(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
 pH.test
 summary(pH.test)
@@ -380,27 +364,8 @@ resids <- residuals(pH.test, append = TRUE)
 
 shapiro.test(resids$.residuals)
 
+#using lme
 
-
-
-pH_aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/Treatment*Weeks), correction = afex_options("HF"), data = tidyData)
-pH_aov
-
-Anova(pH_aov)
-
-summary(pH_aov)
-pH_resids <- pH_aov$`Sample.ID:Treatment:Weeks`$residuals
-
-pH_res_nor <- shapiro.test(pH_resids)
-
-pH_res_nor
-
-pH_aov_log <- aov(pH_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
-summary(pH_aov_log)
-pH_resids_log <- pH_aov_log$`Sample.ID:Treatment:Weeks`$residuals
-
-pH_res_log_nor <- shapiro.test(pH_resids_log)
-pH_res_log_nor
 
 
 
@@ -424,35 +389,7 @@ shapiro.test(NO3.resids$.residuals)
 
 
 
-NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NO3_mod)
-print(NO3_mod)
 
-NO3_residuals <- residuals(attr(NO3_mod, "args")$model)
-shapiro.test(NO3_residuals)
-
-
-NO3_mod_log10 <- anova_test(data = NO3_data, dv = NO3_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NO3_mod_log10)
-print(NO3_mod_log10)
-
-NO3_residuals_log10 <- residuals(attr(NO3_mod_log10, "args")$model)
-shapiro.test(NO3_residuals_log10)
-
-
-NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO3_data)
-summary(NO3_aov)
-NO3_resids <- NO3_aov$`Sample.ID:Treatment:Weeks`$residuals
-
-NO3_res_nor <- shapiro.test(NO3_resids)
-NO3_res_nor
-
-NO3_aov_log <- aov(NO3_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO3_data)
-summary(NO3_aov_log)
-NO3_resids_log <- NO3_aov_log$`Sample.ID:Treatment:Weeks`$residuals
-
-NO3_res_log_nor <- shapiro.test(NO3_resids_log)
-NO3_res_log_nor
 
 ## NO2 ----
 # Check for  rows with NA's in NO2 column
@@ -464,6 +401,7 @@ NO2_data <- tidyData %>%
 head(NO2_data)
 
 # Run model
+# Using afex
 NO2.test <- afex::aov_car(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
 NO2.test
 summary(NO2.test)
@@ -472,37 +410,9 @@ NO2.resids <- residuals(NO2.test, append = TRUE)
 
 shapiro.test(NO2.resids$.residuals)
 
+# Using lme
 
 
-
-NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NO2_mod)
-print(NO2_mod)
-
-NO2_residuals <- residuals(attr(NO2_mod, "args")$model)
-shapiro.test(NO2_residuals)
-
-
-NO2_mod_log10 <- anova_test(data = NO2_data, dv = NO2_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NO2_mod_log10)
-print(NO2_mod_log10)
-
-NO2_residuals_log10 <- residuals(attr(NO2_mod_log10, "args")$model)
-shapiro.test(NO2_residuals_log10)
-
-
-NO2_aov <- aov(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO2_data)
-summary(NO2_aov)
-NO2_resids <- NO2_aov$`Sample.ID:Treatment:Weeks`$residuals
-
-NO2_res_nor <- shapiro.test(NO2_resids)
-
-NO2_aov_log <- aov(NO2_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO2_data)
-summary(NO2_aov_log)
-NO2_resids_log <- NO2_aov_log$`Sample.ID:Treatment:Weeks`$residuals
-
-NO2_res_log_nor <- shapiro.test(NO2_resids_log)
-NO2_res_log_nor
 
 ## NH4----
 # Check for  rows with NA's in NH4 column
@@ -513,6 +423,7 @@ NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
 # Run model
+# Using afex
 NH4.test <- afex::aov_car(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
 NH4.test
 summary(NH4.test)
@@ -521,34 +432,9 @@ NH4.resids <- residuals(NH4.test, append = TRUE)
 
 shapiro.test(NH4.resids$.residuals)
 
-
-NH4_mod <- anova_test(data = NH4_data, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NH4_mod)
-print(NH4_mod)
-
-NH4_residuals <- residuals(attr(NH4_mod, "args")$model)
-shapiro.test(NH4_residuals)
+# Using lme
 
 
-NH4_mod_log10 <- anova_test(data = NH4_data, dv = NH4_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(NH4_mod_log10)
-print(NH4_mod_log10)
-
-NH4_residuals_log10 <- residuals(attr(NH4_mod_log10, "args")$model)
-shapiro.test(NH4_residuals_log10)
-
-
-NH4_aov <- aov(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
-summary(NH4_aov)
-NH4_resids <- NH4_aov$`Sample.ID:Treatment:Weeks`$residuals
-
-NH4_res_nor <- shapiro.test(NH4_resids)
-
-NH4_aov_log <- aov(NH4_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
-NH4_resids_log <- NH4_aov_log$`Sample.ID:Treatment:Weeks`$residuals
-
-NH4_res_log_nor <- shapiro.test(NH4_resids_log)
-NH4_res_log_nor 
 
 ## K ----
 # Check for  rows with NA's in K column
@@ -561,6 +447,7 @@ head(K_data)
 tail(K_data)
 
 # Run model
+# Using afex
 K.test <- afex::aov_car(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
 K.test
 summary(K.test)
@@ -569,44 +456,9 @@ K.resids <- residuals(K.test, append = TRUE)
 
 shapiro.test(K.resids$.residuals)
 
+# Using lme
 
 
-K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(K_mod)
-print(K_mod)
-
-K_residuals <- residuals(attr(K_mod, "args")$model)
-shapiro.test(K_residuals)
-
-
-K_mod_log10 <- anova_test(data = K_data, dv = K_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
-get_anova_table(K_mod_log10)
-print(K_mod_log10)
-
-K_residuals_log10 <- residuals(attr(K_mod_log10, "args")$model)
-shapiro.test(K_residuals_log10)
-
-
-
-K_aov <- aov(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
-summary(K_aov)
-K_resids <- K_aov$`Sample.ID:Treatment:Weeks`$residuals
-
-K_res_nor <- shapiro.test(K_resids)
-
-K_aov_log <- aov(K_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
-summary(K_aov_log)
-K_resids_log <- K_aov_log$`Sample.ID:Treatment:Weeks`$residuals
-
-K_res_log_nor <- shapiro.test(K_resids_log)
-K_res_log_nor 
-
-
-pH_res_nor
-NO3_res_nor
-NO2_res_nor
-NH4_res_nor
-K_res_nor
 
 # Post-hoc tests ----
 #### pH ----
