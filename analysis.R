@@ -5,8 +5,10 @@ options(scipen = 999)
 # Load libraries ----
 library(tidyverse)
 library(gridExtra)
-library(rstatix)
+library(afex)
 library(ggpubr)
+library(lme4)
+library(car)
 
 
 # Read in csv file created at the end of the data-wrangling script ----
@@ -38,7 +40,7 @@ str(tidyData)
 tidyData <- tidyData%>% 
   mutate(across(c(Moisture, NO3:NH4), ~ ifelse(.x<0, 0, .x)))
 
-
+str(tidyData)
 tail(tidyData, 20)
 
 # Show data summary to extract mean moisture content (%) for reporting in manuscript
@@ -180,29 +182,27 @@ normality2$p <- round(normality2$p, 4)
 # Too many data points are removed from the week 24 groups for this to be a valid option, especially since some data still
 # violates the normality assumption
 
+
 # Transforming data and re-testing normality ----
 ### Log10 transformation
 tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
   mutate(pH_log10 = log10(pH + 1))
 
 tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
   mutate(NO3_log10 = log10(NO3 + 1))
 
 tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
   mutate(NO2_log10 = log10(NO2 + 1))
 
 tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
   mutate(NH4_log10= log10(NH4 + 1))
 
 tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
   mutate(K_log10 = log10(K + 1))
 
-### Square root transformation
+str(tidyData)
+
+### Square root transformation ----
 tidyData <- tidyData %>%
     group_by(Treatment, Weeks) %>%
     mutate(pH_sqrt = sqrt(pH))
@@ -244,6 +244,7 @@ tidyData <- tidyData %>%
   group_by(Treatment, Weeks) %>%
   mutate(K_log = log(K + 1))
 
+
 ### Testing log10 transformed data for normality ----
 normality3 <-tidyData%>%
   group_by(Treatment,Weeks) %>%
@@ -281,6 +282,7 @@ gghistogram(tidyData, "NH4_log10", ggtheme = theme_bw()) +
 ggqqplot(tidyData, "K_log10", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "K_log10")
+
 
 
 ### Testing sqrt transformed data for normality ----
@@ -345,7 +347,9 @@ ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
 
 
 
-# Fitting anova model with rstatix package ----
+
+
+# Fitting models ----
 ## pH ----
 # Check for rows with NA's in pH column
 tidyData[!complete.cases(tidyData$pH),]
@@ -356,11 +360,40 @@ get_anova_table(pH_mod) #the get_anova_table function (rstatix) automatically ap
 # sphericity correction" on any factors that violate this assumption
 print(pH_mod)
 
-pH_aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
+# Retrieve residuals from the anova_test() model and test for normality
+pH.residuals <- residuals(attr(pH_mod, "args")$model)
+shapiro.test(pH.residuals)
+
+
+
+pH_mod_log10 <- anova_test(data = tidyData, dv = pH_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
+print(pH_mod_log10)
+
+pH_log10_residuals <- residuals(attr(pH_mod_log10, "args")$model)
+shapiro.test(pH_log10_residuals)
+
+pH.test <- afex::aov_car(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+pH.test
+summary(pH.test)
+
+resids <- residuals(pH.test, append = TRUE)
+
+shapiro.test(resids$.residuals)
+
+
+
+
+pH_aov <- aov(pH ~ Treatment*Weeks + Error(Sample.ID/Treatment*Weeks), correction = afex_options("HF"), data = tidyData)
+pH_aov
+
+Anova(pH_aov)
+
 summary(pH_aov)
 pH_resids <- pH_aov$`Sample.ID:Treatment:Weeks`$residuals
 
 pH_res_nor <- shapiro.test(pH_resids)
+
+pH_res_nor
 
 pH_aov_log <- aov(pH_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = tidyData)
 summary(pH_aov_log)
@@ -368,6 +401,8 @@ pH_resids_log <- pH_aov_log$`Sample.ID:Treatment:Weeks`$residuals
 
 pH_res_log_nor <- shapiro.test(pH_resids_log)
 pH_res_log_nor
+
+
 
 ## NO3 ----
 # Check for  rows with NA's in NO3 column
@@ -379,11 +414,33 @@ NO3_data <- tidyData %>%
 head(NO3_data)
 
 # Run model
+NO3.test <- afex::aov_car(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+NO3.test
+summary(NO3.test)
+
+NO3.resids <- residuals(NO3.test, append = TRUE)
+
+shapiro.test(NO3.resids$.residuals)
+
+
+
 NO3_mod <- anova_test(data = NO3_data, dv = NO3, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NO3_mod)
 print(NO3_mod)
 
-NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO3_data)
+NO3_residuals <- residuals(attr(NO3_mod, "args")$model)
+shapiro.test(NO3_residuals)
+
+
+NO3_mod_log10 <- anova_test(data = NO3_data, dv = NO3_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
+get_anova_table(NO3_mod_log10)
+print(NO3_mod_log10)
+
+NO3_residuals_log10 <- residuals(attr(NO3_mod_log10, "args")$model)
+shapiro.test(NO3_residuals_log10)
+
+
+NO3_aov <- aov(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO3_data)
 summary(NO3_aov)
 NO3_resids <- NO3_aov$`Sample.ID:Treatment:Weeks`$residuals
 
@@ -407,9 +464,32 @@ NO2_data <- tidyData %>%
 head(NO2_data)
 
 # Run model
+NO2.test <- afex::aov_car(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+NO2.test
+summary(NO2.test)
+
+NO2.resids <- residuals(NO2.test, append = TRUE)
+
+shapiro.test(NO2.resids$.residuals)
+
+
+
+
 NO2_mod <- anova_test(data = NO2_data, dv = NO2, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NO2_mod)
 print(NO2_mod)
+
+NO2_residuals <- residuals(attr(NO2_mod, "args")$model)
+shapiro.test(NO2_residuals)
+
+
+NO2_mod_log10 <- anova_test(data = NO2_data, dv = NO2_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
+get_anova_table(NO2_mod_log10)
+print(NO2_mod_log10)
+
+NO2_residuals_log10 <- residuals(attr(NO2_mod_log10, "args")$model)
+shapiro.test(NO2_residuals_log10)
+
 
 NO2_aov <- aov(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NO2_data)
 summary(NO2_aov)
@@ -433,9 +513,30 @@ NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
 # Run model
+NH4.test <- afex::aov_car(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = tidyData)
+NH4.test
+summary(NH4.test)
+
+NH4.resids <- residuals(NH4.test, append = TRUE)
+
+shapiro.test(NH4.resids$.residuals)
+
+
 NH4_mod <- anova_test(data = NH4_data, dv = NH4, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(NH4_mod)
 print(NH4_mod)
+
+NH4_residuals <- residuals(attr(NH4_mod, "args")$model)
+shapiro.test(NH4_residuals)
+
+
+NH4_mod_log10 <- anova_test(data = NH4_data, dv = NH4_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
+get_anova_table(NH4_mod_log10)
+print(NH4_mod_log10)
+
+NH4_residuals_log10 <- residuals(attr(NH4_mod_log10, "args")$model)
+shapiro.test(NH4_residuals_log10)
+
 
 NH4_aov <- aov(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
 summary(NH4_aov)
@@ -444,7 +545,6 @@ NH4_resids <- NH4_aov$`Sample.ID:Treatment:Weeks`$residuals
 NH4_res_nor <- shapiro.test(NH4_resids)
 
 NH4_aov_log <- aov(NH4_log10 ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = NH4_data)
-summary(NH4_aov_log)
 NH4_resids_log <- NH4_aov_log$`Sample.ID:Treatment:Weeks`$residuals
 
 NH4_res_log_nor <- shapiro.test(NH4_resids_log)
@@ -461,9 +561,32 @@ head(K_data)
 tail(K_data)
 
 # Run model
+K.test <- afex::aov_car(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
+K.test
+summary(K.test)
+
+K.resids <- residuals(K.test, append = TRUE)
+
+shapiro.test(K.resids$.residuals)
+
+
+
 K_mod <- anova_test(data = K_data, dv = K, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
 get_anova_table(K_mod)
 print(K_mod)
+
+K_residuals <- residuals(attr(K_mod, "args")$model)
+shapiro.test(K_residuals)
+
+
+K_mod_log10 <- anova_test(data = K_data, dv = K_log10, wid = Sample.ID, within = c(Treatment, Weeks), detailed = TRUE)
+get_anova_table(K_mod_log10)
+print(K_mod_log10)
+
+K_residuals_log10 <- residuals(attr(K_mod_log10, "args")$model)
+shapiro.test(K_residuals_log10)
+
+
 
 K_aov <- aov(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment + Weeks + Treatment:Weeks)), data = K_data)
 summary(K_aov)
@@ -683,3 +806,14 @@ K.owc <- data.frame(test = rep("K", nrow(K.one.way)), K.one.way)
 
 owc_results <- rbind(ph.owc, con.owc, NO3.owc, NO2.owc,NH4.owc, TON.owc, K.owc)
 write_csv(owc_results, "owc-results.csv")
+
+
+
+
+
+tidyDataLong <- tidyData %>%
+  pivot_longer(cols = c(Moisture:K, pH_log10:K_log10),
+               names_to = "Variable",
+               values_to = "Repsonse")
+
+head(tidyDataLong, 20)
