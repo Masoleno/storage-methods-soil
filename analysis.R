@@ -224,36 +224,16 @@ tidyData <- tidyData %>%
   group_by(Treatment, Weeks) %>%
   mutate(K_sqrt = sqrt(K))
 
-### Natural log transformation
-tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
-  mutate(pH_log = log(pH + 1))
-
-tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
-  mutate(NO3_log = log(NO3 + 1))
-
-tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
-  mutate(NO2_log = log(NO2 + 1))
-
-tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
-  mutate(NH4_log = log(NH4 + 1))
-
-tidyData <- tidyData %>%
-  group_by(Treatment, Weeks) %>%
-  mutate(K_log = log(K + 1))
-
 
 ### Testing log10 transformed data for normality ----
-normality3 <-tidyData%>%
+normality2 <-tidyData%>%
   group_by(Treatment,Weeks) %>%
   shapiro_test(pH_log10, NO3_log10, NO2_log10, NH4_log10, K_log10)
-data.frame(normality3)
-normality3 %>%
+data.frame(normality2)
+normality2 %>%
   group_by(Treatment, Weeks, variable)
-head(normality3)
+head(normality2)
+normality2$p <- round(normality2$p, 4)
 
 ggqqplot(tidyData, "pH_log10", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
@@ -287,13 +267,15 @@ ggqqplot(tidyData, "K_log10", ggtheme = theme_bw()) +
 
 
 ### Testing sqrt transformed data for normality ----
-normality4 <-tidyData%>%
+normality3 <-tidyData%>%
   group_by(Treatment,Weeks) %>%
   shapiro_test(pH_sqrt, NO3_sqrt, NO2_sqrt, NH4_sqrt, K_sqrt)
-data.frame(normality4)
-normality4 %>%
+data.frame(normality3)
+normality3 %>%
   group_by(Treatment, Weeks, variable)
-head(normality4)
+head(normality3)
+
+normality3$p <- round(normality3$p, 4)
 
 ggqqplot(tidyData, "pH_sqrt", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
@@ -350,346 +332,235 @@ ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
 
 
 
+
+
 # Fitting models ----
 ## pH ----
-# Check for rows with NA's in pH column
-tidyData[!complete.cases(tidyData$pH),]
-
-# Run model
-# using afex
-pH.aov <- afex::aov_car(pH ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), correction = "HF", data = tidyData)
-pH.aov
-summary(pH.aov)
-
-pH.resids <- residuals(pH.aov)
-
-shapiro.test(pH.resids)
-
-#using lme
-
+# Run model using lme
 pH.lme <- lme4::lmer(pH ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(pH.lme)
 Anova(pH.lme, type = 3)
 
 shapiro.test(residuals(pH.lme))
-ggqqplot(resid(pH.lme))
+pH.residuals.plot <- ggqqplot(resid(pH.lme)) + labs(title = "pH residuals")
+pH.residuals.plot
 
+#### On transformed data ----
+# log10 transformed
+pH.lme.log10 <- lme4::lmer(pH_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(pH.lme.log10)
+Anova(pH.lme.log10, type = 3)
+
+shapiro.test(residuals(pH.lme.log10))
+pHlog10.residuals.plot <- ggqqplot(resid(pH.lme.log10)) +
+  labs(title = "pH log10 residuals")
+pHlog10.residuals.plot
+
+# square root transformed 
+pH.lme.sqrt <- lme4::lmer(pH_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(pH.lme.sqrt)
+Anova(pH.lme.sqrt, type = 3)
+
+shapiro.test(residuals(pH.lme.sqrt))
+pHsqrt.residuals.plot <- ggqqplot(resid(pH.lme.sqrt)) + labs(title = "pH square root residuals")
+pHsqrt.residuals.plot
+
+
+
+
+
+### Post-hoc tests ----
+pH.emm <- emmeans(pH.lme, ~ Weeks|Treatment)
+pH.pwc <- emmeans(pH.lme, pairwise ~ Weeks|Treatment)
+pH.pwc
+
+###
 ## NO3 ----
-# Check for  rows with NA's in NO3 column
-tidyData[!complete.cases(tidyData$NO3),]
-
-# Remove NA's
-NO3_data <- tidyData %>%
-  drop_na(NO3)
-head(NO3_data)
-
-# Run model
-# Using afex
-NO3.test <- afex::aov_car(NO3 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO3_data)
-NO3.test
-summary(NO3.test)
-
-NO3.resids <- residuals(NO3.test, append = TRUE)
-
-shapiro.test(NO3.resids$.residuals)
-
-# Using lme
+# Run model using lme
 NO3.lme <- lme4::lmer(NO3 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO3.lme)
 Anova(NO3.lme, type = 3)
 
 shapiro.test(residuals(NO3.lme))
-ggqqplot(resid(NO3.lme))
+NO3.residuals.plot <- ggqqplot(resid(NO3.lme)) + labs(title = "NO3 residuals")
+NO3.residuals.plot
+
+### Post-hoc tests ----
+NO3.emm <- emmeans(NO3.lme, ~ Weeks|Treatment)
+NO3.pwc <- emmeans(NO3.emm, pairwise ~ Weeks|Treatment)
+NO3.pwc
+
+###
+
+### On transformed data ----
+# log10 transformed 
+NO3.lme.log10 <- lme4::lmer(NO3_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO3.lme.log10)
+Anova(NO3.lme.log10, type = 3)
+
+shapiro.test(residuals(NO3.lme.log10))
+NO3log10.residuals.plot <- ggqqplot(resid(NO3.lme.log10)) +
+  labs(title = "NO3 log10 residuals")
+NO3log10.residuals.plot
+
+# square root transformed 
+NO3.lme.sqrt <- lme4::lmer(NO3_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO3.lme.sqrt)
+Anova(NO3.lme.sqrt, type = 3)
+
+shapiro.test(residuals(NO3.lme.sqrt))
+NO3sqrt.residuals.plot <- ggqqplot(resid(NO3.lme.sqrt)) + labs(title = "NO3 square root residuals")
+NO3sqrt.residuals.plot
+
+
+
+
+
 
 ## NO2 ----
-# Check for  rows with NA's in NO2 column
-tidyData[!complete.cases(tidyData$NO2),]
-
-# Remove NA's
-NO2_data <- tidyData %>%
-  drop_na(NO2)
-head(NO2_data)
-
-# Run model
-# Using afex
-NO2.test <- afex::aov_car(NO2 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NO2_data)
-NO2.test
-summary(NO2.test)
-
-NO2.resids <- residuals(NO2.test, append = TRUE)
-
-shapiro.test(NO2.resids$.residuals)
-ggqqplot(NO2.resids$.residuals)
-
-# Using lme
+# Run model using lme
 NO2.lme <- lme4::lmer(NO2 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO2.lme)
 Anova(NO2.lme, type = 3)
 
 shapiro.test(residuals(NO2.lme))
-ggqqplot(resid(NO2.lme))
+NO2.residuals.plot <- ggqqplot(resid(NO2.lme)) + labs(title = "NO2 residuals")
+NO2.residuals.plot
+
+### Post-hoc tests ----
+NO2.emm <- emmeans(NO2.lme, ~ Weeks|Treatment)
+NO2.pwc <- emmeans(NO2.emm, pairwise ~ Weeks|Treatment)
+NO2.pwc
+
+###
+
+### On transformed data ----
+# log10 transformed 
+NO2.lme.log10 <- lme4::lmer(NO2_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO2.lme.log10)
+Anova(NO2.lme.log10, type = 3)
+
+shapiro.test(residuals(NO2.lme.log10))
+NO2log10.residuals.plot <- ggqqplot(resid(NO2.lme.log10)) +
+  labs(title = "NO2 log10 residuals")
+NO2log10.residuals.plot
+
+# square root transformed
+NO2.lme.sqrt <- lme4::lmer(NO2_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NO2.lme.sqrt)
+Anova(NO2.lme.sqrt, type = 3)
+
+shapiro.test(residuals(NO2.lme.sqrt))
+NO2sqrt.residuals.plot <- ggqqplot(resid(NO2.lme.sqrt)) + labs(title = "NO2 square root residuals")
+NO2sqrt.residuals.plot
+
+
+
+
 
 ## NH4----
 # Check for  rows with NA's in NH4 column
-tidyData[!complete.cases(tidyData$NH4),]
-
 # Removing rows where NH4 results are unusable (mistake with the dilution so concentration was outside calibration)
 NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
-# Run model
-# Using afex
-NH4.test <- afex::aov_car(NH4 ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = NH4_data)
-NH4.test
-summary(NH4.test)
-
-NH4.resids <- residuals(NH4.test, append = TRUE)
-
-shapiro.test(NH4.resids$.residuals)
-ggqqplot((NH4.resids$.residuals))
-
-# Using lme
-NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NH4.lme)
+# Run model using lme
+NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1 | Sample.ID), data = NH4_data)
 Anova(NH4.lme, type = 3)
 
 shapiro.test(residuals(NH4.lme))
-ggqqplot(resid(NH4.lme))
+NH4.residuals.plot <- ggqqplot(resid(NH4.lme)) + labs(title = "NH4 residuals")
+NH4.residuals.plot
+
+### Post-hoc tests ----
+NH4.emm <- emmeans(NH4.lme, ~ Weeks|Treatment)
+NH4.pwc <- emmeans(NH4.emm, pairwise ~ Weeks|Treatment)
+NH4.pwc
+
+###
+
+### On transformed data ----
+# log10 transformed 
+NH4.lme.log10 <- lme4::lmer(NH4_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NH4.lme.log10)
+Anova(NH4.lme.log10, type = 3)
+
+shapiro.test(residuals(NH4.lme.log10))
+NH4log10.residuals.plot <- ggqqplot(resid(NH4.lme.log10)) +
+  labs(title = "NH4 log10 residuals")
+NH4log10.residuals.plot
+
+# square root transformed
+NH4.lme.sqrt <- lme4::lmer(NH4_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(NH4.lme.sqrt)
+Anova(NH4.lme.sqrt, type = 3)
+
+shapiro.test(residuals(NH4.lme.sqrt))
+NH4sqrt.residuals.plot <- ggqqplot(resid(NH4.lme.sqrt)) + labs(title = "NH4 square root residuals")
+NH4sqrt.residuals.plot
+
+
 
 ## K ----
 # Check for  rows with NA's in K column
-tidyData[!complete.cases(tidyData$K),]
-
-# Remove NA's
-K_data <- tidyData %>%
-  drop_na(K)
-head(K_data)
-tail(K_data)
-
-# Run model
-# Using afex
-K.test <- afex::aov_car(K ~ Treatment*Weeks + Error(Sample.ID/(Treatment*Weeks)), data = K_data)
-K.test
-summary(K.test)
-
-K.resids <- residuals(K.test, append = TRUE)
-
-shapiro.test(K.resids$.residuals)
-
-# Using lme
+# Run model using lme
 K.lme <- lme4::lmer(K ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(K.lme)
 Anova(K.lme, type = 3)
 
 shapiro.test(residuals(K.lme))
-ggqqplot(resid(K.lme))
+K.residuals.plot <- ggqqplot(resid(K.lme)) + labs(title = "K residuals")
+K.residuals.plot
 
-# Post-hoc tests ----
-#### pH ----
-##### Effect of time (Weeks) at each Treatment type----
-pH.one.way <- tidyData %>%
-  group_by(Treatment) %>%
-  anova_test(dv = pH, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-pH.one.way
-
-##### Pairwise comparisons between time points ----
-pH.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    pH ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-pH.pwc
-
-
-#### Conductivity ----
-##### Effect of time (Weeks) at each Treatment type----
-con.one.way <- tidyData %>%
-  group_by(Treatment) %>%
-  anova_test(dv = Conductivity, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-con.one.way
-
-##### Pairwise comparisons between time points ----
-con.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    Conductivity ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-con.pwc
-
-
-#### NO3----
-##### Effect of time (Weeks) at each Treatment type----
-NO3.one.way <- NO3_data %>%
-  group_by(Treatment) %>%
-  anova_test(dv = NO3, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-NO3.one.way
-
-##### Pairwise comparisons between time points ----
-NO3.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    NO3 ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-NO3.pwc
-
-
-#### NO2 ----
-##### Effect of time (Weeks) at each Treatment type----
-NO2.one.way <- NO2_data %>%
-  group_by(Treatment) %>%
-  anova_test(dv = NO2, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-NO2.one.way
-
-##### Pairwise comparisons between time points ----
-NO2.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    NO2 ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-NO2.pwc
-
-
-#### NH4 ----
-##### Effect of time (Weeks) at each Treatment type----
-NH4.one.way <- NH4_data %>%
-  group_by(Treatment) %>%
-  anova_test(dv = NH4, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-NH4.one.way
-
-##### Pairwise comparisons between time points ----
-NH4.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    NH4 ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-NH4.pwc
-
-
-#### TON ----
-##### Effect of time (Weeks) at each Treatment type----
-TON.one.way <- tidyData %>%
-  group_by(Treatment) %>%
-  anova_test(dv = TON, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-TON.one.way
-
-##### Pairwise comparisons between time points ----
-TON.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    TON ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
-TON.pwc
-
-
-#### K ----
-##### Effect of time (Weeks) at each Treatment type----
-K.one.way <- K_data %>%
-  group_by(Treatment) %>%
-  anova_test(dv = K, wid = Sample.ID, within = Weeks) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-
-K.one.way
-
-##### Pairwise comparisons between time points ---- Also not working with the reduced data set
-K.pwc <- tidyData %>%
-  group_by(Treatment) %>%
-  pairwise_t_test(
-    K ~ Weeks, paired = TRUE,
-    p.adjust.method = "bonferroni"
-  )
+### Post-hoc tests ----
+K.emm <- emmeans(K.lme, ~ Weeks|Treatment)
+K.pwc <- emmeans(K.emm, pairwise ~ Weeks|Treatment)
 K.pwc
+
+
+###
+
+### On transformed data ----
+# log10 transformed 
+K.lme.log10 <- lme4::lmer(K_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(K.lme.log10)
+Anova(K.lme.log10, type = 3)
+
+shapiro.test(residuals(K.lme.log10))
+Klog10.residuals.plot <- ggqqplot(resid(K.lme.log10)) +
+  labs(title = "K log10 residuals")
+Klog10.residuals.plot
+
+# square root transformed 
+K.lme.sqrt <- lme4::lmer(K_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+summary(K.lme.sqrt)
+Anova(K.lme.sqrt, type = 3)
+
+shapiro.test(residuals(K.lme.sqrt))
+Ksqrt.residuals.plot <- ggqqplot(resid(K.lme.sqrt)) + labs(title = "K square root residuals")
+Ksqrt.residuals.plot
+
+combined.residual.plots <- ggarrange(pH.residuals.plot, pHlog10.residuals.plot, pHsqrt.residuals.plot, 
+                                     NO3.residuals.plot, NO3log10.residuals.plot, NO3sqrt.residuals.plot,
+                                     ncol = 3, nrow = 3)
+
+
+combined.residual.plots1 <- ggarrange(NO2.residuals.plot, NO2log10.residuals.plot, NO2sqrt.residuals.plot,
+                                      NH4.residuals.plot, NH4log10.residuals.plot, NH4sqrt.residuals.plot,
+                                      K.residuals.plot, Klog10.residuals.plot, Ksqrt.residuals.plot,
+                                      ncol = 3, nrow = 3)
+
+combined.residual.plots
+combined.residual.plots1
+
+
+
+
 
 
 
 # Printing all results together to console for easier reading ----
-get_anova_table(pH_mod)
-pH.one.way
-pH.pwc
-get_anova_table(cond_mod)
-con.one.way
-con.pwc
-get_anova_table(NO3_mod)
-NO3.one.way
-NO3.pwc
-get_anova_table(NO2_mod)
-NO2.one.way
-NO2.pwc
-get_anova_table(NH4_mod)
-NH4.one.way
-NH4.pwc
-get_anova_table(TON_mod)
-TON.one.way
-TON.pwc
-get_anova_table(K_mod)
-K.one.way
-K.pwc
+
 
 # Saving results to csv ----
-pH.aov <- data.frame(test = rep("pH", 3), get_anova_table(pH_mod))
-cond.aov <- data.frame(test = rep("Conductivity", 3), get_anova_table(cond_mod))
-NO3.aov <- data.frame(test = rep("NO3", 3),get_anova_table(NO3_mod))
-NO2.aov <-data.frame(test = rep("NO2", 3), get_anova_table(NO2_mod))
-NH4.aov <- data.frame(test = rep("NH4", 3), get_anova_table(NH4_mod))
-TON.aov <- data.frame(test = rep("TON", 3), get_anova_table(TON_mod))
-K.aov <- data.frame(test = rep("K", 3), get_anova_table(K_mod))
-
-aov_results <- rbind(pH.aov, cond.aov, NO3.aov, NO2.aov, NH4.aov, TON.aov, K.aov)
-write_csv(aov_results, "aov-results.csv")
-
-data.frame(pH.pwc)
-data.frame(con.pwc)
-data.frame(NO3.pwc)
-data.frame(NO2.pwc)
-data.frame(NH4.pwc)
-data.frame(TON.pwc)
-data.frame(K.pwc)
-
-pwc_results <- rbind(pH.pwc, con.pwc, NO3.pwc, NO2.pwc, NH4.pwc, TON.pwc, K.pwc)
-write_csv(pwc_results, "pwc-results.csv")
-
-ph.owc <- data.frame(test = rep("pH", nrow(pH.one.way)), pH.one.way)
-con.owc <- data.frame(test = rep("Conductivity", nrow(con.one.way)), con.one.way)
-NO3.owc <- data.frame(test = rep("NO3", nrow(NO3.one.way)), NO3.one.way)
-NO2.owc <- data.frame(test = rep("NO2", nrow(NO2.one.way)), NO2.one.way)
-NH4.owc <- data.frame(test = rep("NH4", nrow(NH4.one.way)), NH4.one.way)
-TON.owc <- data.frame(test = rep("TON", nrow(TON.one.way)), TON.one.way)
-K.owc <- data.frame(test = rep("K", nrow(K.one.way)), K.one.way)
-
-owc_results <- rbind(ph.owc, con.owc, NO3.owc, NO2.owc,NH4.owc, TON.owc, K.owc)
-write_csv(owc_results, "owc-results.csv")
 
 
 
 
 
-tidyDataLong <- tidyData %>%
-  pivot_longer(cols = c(Moisture:K, pH_log10:K_log10),
-               names_to = "Variable",
-               values_to = "Repsonse")
-
-head(tidyDataLong, 20)
