@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Load libraries
 ```{r}
 library(tidyverse)
+library(ggpubr)
 library(gridExtra)
 
 ```
@@ -21,15 +22,15 @@ library(gridExtra)
 ## Read in data
 ```{r}
 
-tidyData <- read.csv("chemistry-data-tidy.csv")
+#tidyData <- read.csv("chemistry-data-tidy.csv")
 
 # Read in the same data but with nutrients for the dry treatment reported as mg/kg wet weight
-dryData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
+tidyDataDry <- read.csv("chemistry-data-tidy-dryCorrected.csv")
 
 ```
 
 ```{r}
-str(dryData)
+str(tidyDataDry)
 
 ```
 
@@ -41,20 +42,13 @@ str(tidyData)
 
 ## Convert weeks to factor so it can be used to group the plots
 ```{r}
-tidyData$Weeks <- as.factor(tidyData$Weeks)
-glimpse(tidyData)
+tidyDataDry$Weeks <- as.factor(tidyDataDry$Weeks)
+str(tidyDataDry)
 ```
 
 ```{r}
-dryData$Weeks <- as.factor(dryData$Weeks)
-str(dryData)
-```
 
-
-## Renaming columns so they're easier to write.
-```{r}
-
-tidyData<- tidyData %>% 
+tidyDataDry<- tidyDataDry %>% 
   rename(
    "NH4 (mg/kg)" = NH4..mg.kg.,
    "K (mg/kg)" = K..mg.kg.,
@@ -63,32 +57,17 @@ tidyData<- tidyData %>%
    "Moisture (%)" = Moisture....
   )
 
-head(tidyData)
-
-```
-
-```{r}
-
-dryData<- dryData %>% 
-  rename(
-   "NH4 (mg/kg)" = NH4..mg.kg.,
-   "K (mg/kg)" = K..mg.kg.,
-   "NO2 (mg/kg)" = NO2..mg.kg.,
-   "NO3 (mg/kg)" = NO3..mg.kg.,
-   "Moisture (%)" = Moisture....
-  )
-
-head(dryData)
+head(tidyDataDry)
 
 ```
 ## Replacing negative values in the moisture and nitrate columns with 0. 
 ```{r}
 
-dryData <- dryData %>% 
+tidyDataDry <- tidyDataDry %>% 
   mutate(across(c(`Moisture (%)`, `NO3 (mg/kg)`:`NH4 (mg/kg)`), ~ ifelse(.x<0, 0, .x)))
 
 
-tail(dryData, 20)
+tail(tidyDataDry, 20)
 ```
 
 
@@ -96,21 +75,10 @@ tail(dryData, 20)
 ```{r}
 
 for (i in 3:7) {
-  plot1 <- ggplot(tidyData, aes(tidyData[,i])) +
+  plot1 <- ggplot(tidyDataDry, aes(tidyDataDry[,i])) +
     geom_histogram() +
-    labs(x = colnames(tidyData[i]))
+    labs(x = colnames(tidyDataDry[i]))
   print(plot1)
-  
-}
-```
-Same but with the dry-corrected data
-```{r}
-
-for (i in 3:7) {
-  plot2 <- ggplot(dryData, aes(dryData[,i])) +
-    geom_histogram() +
-    labs(x = colnames(dryData[i]))
-  print(plot2)
   
 }
 ```
@@ -119,49 +87,33 @@ Make boxplots
 ```{r}
 
 for(i in 4:7){
-  plot <- ggplot(tidyData, aes(x = Weeks, y = tidyData[,i])) +
-          stat_boxplot(aes(Weeks, tidyData[,i]), geom = "errorbar") +
-          geom_boxplot(aes(Weeks, tidyData[,i]), outlier.shape = NA, coef = 0) +
-          ylab(colnames(tidyData[i])) +
+  plot <- ggplot(tidyDataDry, aes(x = Weeks, y = tidyDataDry[,i])) +
+          stat_boxplot(aes(Weeks, tidyDataDry[,i]), geom = "errorbar") +
+          geom_boxplot(aes(Weeks, tidyDataDry[,i]), outlier.shape = NA, coef = 0) +
+          ylab(colnames(tidyDataDry[i])) +
           facet_wrap(.~Treatment) +
           theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
-          scale_y_continuous(limits = c(min(tidyData[,i]), max(tidyData[,i]))) 
+          scale_x_discrete(labels = c("Fresh control", "7", "24")) +
+          scale_y_continuous(limits = c(min(tidyDataDry[,i]), max(tidyDataDry[,i]))) 
  print(plot)
  #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
 }
 
 
 ```
-Same with the dry-corrected data
-```{r}
-
-for(i in 4:7){
-  plot <- ggplot(dryData, aes(x = Weeks, y = dryData[,i])) +
-          stat_boxplot(aes(Weeks, dryData[,i]), geom = "errorbar") +
-          geom_boxplot(aes(Weeks, dryData[,i]), outlier.shape = NA, coef = 0) +
-          ylab(colnames(dryData[i])) +
-          facet_wrap(.~Treatment) +
-          theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
-          scale_y_continuous(limits = c(min(dryData[,i]), max(dryData[,i]))) 
- print(plot)
- #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
-}
-
-
-```
-
 
 Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
 ```{r}
 
- pH_plot <- ggplot(tidyData, aes(x = Weeks, y = pH)) +
+ pH_plot <- ggplot(tidyDataDry, aes(x = Weeks, y = pH)) +
           stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
           geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
           ylab("pH") +
           facet_wrap(.~Treatment) +
           theme(text = element_text(family = "Arial", size = 16), 
                 panel.background = element_rect(fill = NA, colour ='black')) +
-          scale_y_continuous(limits = c(5.3, max(tidyData$pH)))
+          scale_x_discrete(labels = c("Fresh control", "7", "24")) +
+          scale_y_continuous(limits = c(5.3, max(tidyDataDry$pH)))
  print(pH_plot)
 
 #ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
