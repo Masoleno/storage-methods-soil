@@ -85,7 +85,7 @@ for (i in 3:7) {
 
 Make boxplots
 ```{r}
-
+plot.list <- list()
 for(i in 4:7){
   plot <- ggplot(tidyDataDry, aes(x = Weeks, y = tidyDataDry[,i])) +
           stat_boxplot(aes(Weeks, tidyDataDry[,i]), geom = "errorbar") +
@@ -95,9 +95,14 @@ for(i in 4:7){
           theme(text = element_text(family = "Arial", size = 16), panel.background = element_rect(fill = NA, colour = 'black')) +
           scale_x_discrete(labels = c("Fresh control", "7", "24")) +
           scale_y_continuous(limits = c(min(tidyDataDry[,i]), max(tidyDataDry[,i]))) 
- print(plot)
+  plot.list[[i]] <- plot
  #ggsave(file = paste0("boxplot-by-treatment-", colnames(tidyData[i]), ".jpeg"), plot = plot, height = 7, width = 9, units = "in")
 }
+
+no3.plot <- plot.list[[4]]
+no2.plot <- plot.list[[5]]
+nh4.plot <- plot.list[[6]]
+k.plot <- plot.list[[7]]
 
 
 ```
@@ -105,7 +110,7 @@ for(i in 4:7){
 Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
 ```{r}
 
- pH_plot <- ggplot(tidyDataDry, aes(x = Weeks, y = pH)) +
+ pH.plot <- ggplot(tidyDataDry, aes(x = Weeks, y = pH)) +
           stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
           geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
           ylab("pH") +
@@ -114,30 +119,14 @@ Plotting pH separately so that y axis can be adjusted in order to remove white s
                 panel.background = element_rect(fill = NA, colour ='black')) +
           scale_x_discrete(labels = c("Fresh control", "7", "24")) +
           scale_y_continuous(limits = c(5.3, max(tidyDataDry$pH)))
- print(pH_plot)
+pH.plot
 
 #ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
 
 
 ```
 
-And with the dry corrected
-```{r}
 
- pH_plot2 <- ggplot(dryData, aes(x = Weeks, y = pH)) +
-          stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
-          geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
-          ylab("pH") +
-          facet_wrap(.~Treatment) +
-          theme(text = element_text(family = "Arial", size = 16), 
-                panel.background = element_rect(fill = NA, colour ='black')) +
-          scale_y_continuous(limits = c(5.3, max(dryData$pH)))
- print(pH_plot2)
-
-#ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
-
-
-```
 
 
 ## Plotting Nitrogen line graph (fig. 7)
