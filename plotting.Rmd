@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggpubr)
 library(gridExtra)
+library(superb)
 
 ```
 
@@ -118,14 +119,27 @@ Plotting pH separately so that y axis can be adjusted in order to remove white s
           theme(text = element_text(family = "Arial", size = 16), 
                 panel.background = element_rect(fill = NA, colour ='black')) +
           scale_x_discrete(labels = c("Fresh control", "7", "24")) +
-          scale_y_continuous(limits = c(5.3, max(tidyDataDry$pH)))
+          scale_y_continuous(limits = c(5.3, 6.7))
 pH.plot
+
+pH.plot + showSignificance(c(1,2), 6.67, -0.05, "***", panel = list(Treatment = "Fridge")) + 
+          showSignificance(c(2,3), 6.64, -0.05, "***", panel = list(Treatment = "Fridge")) +
+          showSignificance(c(1,3), 6.6, -0.05, "***", panel = list(Treatment = "Fridge"))
+  
+
 
 #ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
 
 
+
 ```
 
+```{r}
+
+
+
+
+```
 
 
 
