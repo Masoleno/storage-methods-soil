@@ -9,6 +9,7 @@ library(afex) # afex loads lme4 as a required package
 library(ggpubr)
 library(rstatix) #used for normality testing using shapiro_test()
 library(car)
+library(emmeans)
 
 # Read in csv file created at the end of the data-wrangling script ----
 tidyData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
@@ -17,7 +18,7 @@ tidyData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
 head(tidyData)
 str(tidyData)
 
-# Rename columns so they're easier to write. ----
+# Rename columns so they're easier to write ----
 tidyData<- tidyData %>% 
   rename(
     "NH4" = NH4..mg.kg.,
@@ -36,6 +37,7 @@ tidyData$Treatment <- as.factor(tidyData$Treatment)
 
 str(tidyData)
 
+# Make sure any negative values are set to 0
 tidyData <- tidyData%>% 
   mutate(across(c(Moisture, NO3:NH4), ~ ifelse(.x<0, 0, .x)))
 
@@ -338,7 +340,7 @@ ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
 ## pH ----
 # Run model using lme
 pH.lme <- lme4::lmer(pH ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-Anova(pH.lme, type = 3)
+ph.aov <- Anova(pH.lme, type = 3)
 
 shapiro.test(residuals(pH.lme))
 pH.residuals.plot <- ggqqplot(resid(pH.lme)) + labs(title = "pH residuals")
@@ -377,7 +379,7 @@ pH.pwc
 ## NO3 ----
 # Run model using lme
 NO3.lme <- lme4::lmer(NO3 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-Anova(NO3.lme, type = 3)
+no3.aov <- Anova(NO3.lme, type = 3)
 
 shapiro.test(residuals(NO3.lme))
 NO3.residuals.plot <- ggqqplot(resid(NO3.lme)) + labs(title = "NO3 residuals")
@@ -418,7 +420,7 @@ NO3sqrt.residuals.plot
 ## NO2 ----
 # Run model using lme
 NO2.lme <- lme4::lmer(NO2 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-Anova(NO2.lme, type = 3)
+no2.aov <- Anova(NO2.lme, type = 3)
 
 shapiro.test(residuals(NO2.lme))
 NO2.residuals.plot <- ggqqplot(resid(NO2.lme)) + labs(title = "NO2 residuals")
@@ -463,7 +465,7 @@ NH4_data <- tidyData %>%
 
 # Run model using lme
 NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1 | Sample.ID), data = NH4_data)
-Anova(NH4.lme, type = 3)
+nh4.aov <- Anova(NH4.lme, type = 3)
 
 shapiro.test(residuals(NH4.lme))
 NH4.residuals.plot <- ggqqplot(resid(NH4.lme)) + labs(title = "NH4 residuals")
@@ -502,7 +504,7 @@ NH4sqrt.residuals.plot
 # Check for  rows with NA's in K column
 # Run model using lme
 K.lme <- lme4::lmer(K ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-Anova(K.lme, type = 3)
+k.aov <- Anova(K.lme, type = 3)
 
 shapiro.test(residuals(K.lme))
 K.residuals.plot <- ggqqplot(resid(K.lme)) + labs(title = "K residuals")
@@ -556,7 +558,27 @@ combined.residual.plots1
 
 
 # Printing all results together to console for easier reading ----
+ph.pwc.out <- data.frame(test = rep("pH", 9), summary(pH.pwc)$contrasts)
+no3.pwc.out <- data.frame(test = rep("NO3", 9), summary(NO3.pwc)$contrasts)
+no2.pwc.out <- data.frame(test = rep("NO2", 9), summary(NO2.pwc)$contrasts)
+nh4.pwc.out <- data.frame(test = rep("NH4", 9), summary(NH4.pwc)$contrasts)
+k.pwc.out <- data.frame(test = rep("K", 9), summary(K.pwc)$contrasts)
 
+combined.pwc <- rbind(ph.pwc.out, no3.pwc.out, no2.pwc.out, nh4.pwc.out, k.pwc.out)
+combined.pwc$p.value <- round(combined.pwc$p.value, 2)
+
+write.csv(combined.pwc, "pwc-output.csv")
+
+ph.aov$test <- rep("pH")
+no3.aov$test <- rep("NO3")
+no2.aov$test <- rep("NO2")
+nh4.aov$test <- rep("NH4")
+k.aov$test <- rep("K")
+
+combined.aov <- rbind(ph.aov, no3.aov, no2.aov, nh4.aov, k.aov)
+combined.aov$`Pr(>Chisq)` <- round(combined.aov$`Pr(>Chisq)`, 2)
+
+write_csv(combined.aov, "aov-output.csv")
 
 # Saving results to csv ----
 
