@@ -1,15 +1,3 @@
----
-title: "plotting"
-author: "Maya Sollen-Norrlin"
-date: "2023-02-22"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 
 ## Load libraries
 ```{r}
@@ -35,11 +23,6 @@ str(tidyDataDry)
 
 ```
 
-```{r}
-
-str(tidyData)
-
-```
 
 ## Convert weeks to factor so it can be used to group the plots
 ```{r}
@@ -111,7 +94,7 @@ k.plot <- plot.list[[7]]
 Plotting pH separately so that y axis can be adjusted in order to remove white space on plot
 ```{r}
 
- pH.plot <- ggplot(tidyDataDry, aes(x = Weeks, y = pH)) +
+pH_plot <- ggplot(tidyDataDry, aes(x = Weeks, y = pH)) +
           stat_boxplot(aes(Weeks, pH), geom = "errorbar") +
           geom_boxplot(aes(Weeks, pH), outlier.shape = NA, coef = 0) +
           ylab("pH") +
@@ -120,15 +103,18 @@ Plotting pH separately so that y axis can be adjusted in order to remove white s
                 panel.background = element_rect(fill = NA, colour ='black')) +
           scale_x_discrete(labels = c("Fresh control", "7", "24")) +
           scale_y_continuous(limits = c(5.3, 6.7))
-pH.plot
 
-pH.plot + showSignificance(c(1,2), 6.67, -0.05, "***", panel = list(Treatment = "Fridge")) + 
-          showSignificance(c(2,3), 6.64, -0.05, "***", panel = list(Treatment = "Fridge")) +
-          showSignificance(c(1,3), 6.6, -0.05, "***", panel = list(Treatment = "Fridge"))
+ph.plot <- pH_plot + 
+  showSignificance(c(2,3), 6.6, -0.07, "***", panel = list(Treatment = "Dry")) +
+  showSignificance(c(1,2.9), 5.6, +0.09, "**", panel = list(Treatment = "Dry")) +
+  showSignificance(c(1,2), 6.67, -0.07, "***", panel = list(Treatment = "Fridge")) +
+  showSignificance(c(2.2,3), 6.64, -0.07, "***", panel = list(Treatment = "Fridge")) +
+  showSignificance(c(1,3), 5.6, +0.07, "***", panel = list(Treatment = "Fridge")) +
+  showSignificance(c(2,3), 6.6, -0.07, "***", panel = list(Treatment = "Frozen"))
   
+ph.plot
 
-
-#ggsave(file = "pH-boxplot.jpeg", pH_plot, height = 7, width = 9, units = "in")
+ggsave(file = "pH-boxplot.jpeg", pH.plot, height = 7, width = 9, units = "in")
 
 
 
