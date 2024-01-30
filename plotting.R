@@ -178,8 +178,8 @@ k.plot <- k_plot +
 k.plot
 
 ## Plotting Nitrogen line graph (fig. 7)
-N_data <- dryData %>%
-  select(Sample.ID, `NO3 (mg/kg)`, `NO2 (mg/kg)`, `NH4 (mg/kg)`, Treatment, Weeks)
+N_data <- tidyDataDry %>%
+  select(Sample.ID, NO3, NO2, NH4, Treatment, Weeks)
 
 head(N_data)
 
@@ -195,7 +195,7 @@ N_data[!complete.cases(N_data), ]
 
 ## Make data into long format for plotting on line graph
 N_data_long <- N_data %>%
-  pivot_longer(cols = `NO3 (mg/kg)`:`NH4 (mg/kg)`,
+  pivot_longer(cols = NO3:NH4,
                names_to = "Nitrogen compound",
                values_to = "Concentration (mg/kg)")
 
@@ -221,14 +221,15 @@ N_plot <- ggplot(summaryN, aes(x = factor(Weeks), y = meanConc, color = factor(`
   theme(text = element_text(family = "Arial", size = 16), panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), legend.title = element_text(size = 12), 
         legend.position = "bottom") +
-  labs(x = "Time (weeks)", y = "Mean concentration (mg/kg)", shape = "Nitrogen form") +
+  scale_x_discrete(labels = c("Fresh control", "7", "24")) +
+  labs(x = "Weeks", y = "Mean concentration (mg/kg)", color = "Nitrogen form") +
   scale_color_discrete(labels = c("NH4", "NO2", "NO3"))
 
 
 
 N_plot + scale_color_manual(values = c("#E69F00", "#009E73",  "#56B4E9"))
 
-ggsave(filename = "Nitrogen-linegraph.jpeg", plot = N_plot,  width = 9, unit = "in")
+#ggsave(filename = "Nitrogen-linegraph.jpeg", plot = N_plot,  width = 9, unit = "in")
 
 
 
