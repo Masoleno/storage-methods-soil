@@ -3,6 +3,8 @@ title: "data-wrangling"
 author: "Maya Sollen-Norrlin"
 date: "2022-08-25"
 output: html_document
+description: Script used for preparing raw data for further analysis for the paper 'Soil Sample Storage Conditions Affect Measurements of pH, and Nutrients' 
+by Maya Sollen-Norrlin and Naomi Rintoul-Hynes. All raw data files can be found at: 10.5281/zenodo.10626039
 ---
 
 ```{r setup, include=FALSE}
@@ -39,6 +41,7 @@ str(chem_data)
 head(chem_data)
 
 ```
+
 ## Converting time variable into factor
 ```{r}
 
@@ -51,7 +54,7 @@ chem_data$Time..weeks. <- as.factor(chem_data$Time..weeks.)
 str(chem_data)
 
 ```
-## Filter out irrelevant columns
+## Filter out irrelevant columns used for calculating moisture
 ```{r}
 
 chem_data_filtered <- chem_data %>%
@@ -111,8 +114,6 @@ head(chem_data_filtered)
 
 ```
 
-
-
 ## Replacing negative values in the moisture and nitrate columns with 0. 
 ```{r}
 
@@ -138,7 +139,7 @@ dryData <- chem_data_filtered %>%
 
 ```
 
-Read in csv file with excact weights for each sample aliqout (these are dry weigths for the "Dry" category samples)
+Read in csv file with exact weights for each sample aliquot (these are dry weights for the "Dry" category samples)
 ```{r}
 
 weights <- read.csv("test-weights.csv")
@@ -206,7 +207,7 @@ rawNutrients <- read.csv("raw-nutrient-output.csv", na.strings = c(""))
 str(rawNutrients)
 
 ```
-
+Filter for results from Dry treatment only
 ```{r}
 
 dryNutri <- rawNutrients %>%
@@ -233,7 +234,7 @@ dryNutri<- dryNutri %>%
 
 head(dryNutri)
 ```
-
+Combine nutrient results with the weights and select only relevant columns
 ```{r}
 
 dryDataFinal <- full_join(dryDataComb, dryNutri, by = c("Sample.ID", "Treatment", "Weeks"))
@@ -246,7 +247,7 @@ dryDataFinal <- dryDataFinal %>%
 str(dryDataFinal)
 ```
 
-
+Calculate nutrient concentrations from mg/l to mg/kg wet soil
 ```{r}
 
 dryDataFinal <- dplyr::mutate(dryDataFinal, soil.in.1L.N = wetWeightN*50)
@@ -267,7 +268,7 @@ dryDataFinal <- dplyr::mutate(dryDataFinal, `K (mg/kg) dry` = `K (mg/l)`*dilutio
 
 str(dryDataFinal)
 ```
-
+Round values to 2 decimal points
 ```{r}
 
 dryDataFinal <- dryDataFinal %>% 
@@ -276,6 +277,7 @@ dryDataFinal <- dryDataFinal %>%
 ```
 
 
+Nutrients calculations from the below csv file were copied across (using excel copy and paste) to the 'chemistry-data-tidy.csv' file saved at line 128 and then saved as a separate file called 'chemistry-data-tidy-dryCorrected.csv' so that these concentrations were the ones used for downstream analyses.
 ```{r}
 
 write_csv(dryDataFinal, "nutrients-dry-backCalculated.csv", col_names = TRUE, na = "")

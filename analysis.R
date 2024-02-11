@@ -1,3 +1,6 @@
+# Script used for the data analysis for the paper 'Soil Sample Storage Conditions Affect Measurements of pH, and Nutrients' 
+# by Maya Sollen-Norrlin and Naomi Rintoul-Hynes. 
+
 # Set numbers to show in standard format instead of scientific notation. 
 # (Reactivate scientific notation with options(scipen = 0))
 options(scipen = 999)
@@ -5,20 +8,20 @@ options(scipen = 999)
 # Load libraries ----
 library(tidyverse)
 library(gridExtra)
-library(afex) # afex loads lme4 as a required package
+library(lme4) 
 library(ggpubr)
 library(rstatix) #used for normality testing using shapiro_test()
 library(car)
 library(emmeans)
 
-# Read in csv file created at the end of the data-wrangling script ----
+# Read in and prepare data (csv file from the 'data-wrangling' script with dry-corrected nutrient concentrations) ----
 tidyData <- read.csv("chemistry-data-tidy-dryCorrected.csv")
 
 # Look at the data
 head(tidyData)
 str(tidyData)
 
-# Rename columns so they're easier to write ----
+# Rename columns so they're easier to refer to ----
 tidyData<- tidyData %>% 
   rename(
     "NH4" = NH4..mg.kg.,
@@ -30,7 +33,7 @@ tidyData<- tidyData %>%
 
 head(tidyData)
 
-# Convert to factors ----
+# Convert Treatment and Weeks to factors ----
 tidyData$Weeks <- as.factor(tidyData$Weeks)
 
 tidyData$Treatment <- as.factor(tidyData$Treatment)
@@ -44,10 +47,26 @@ tidyData <- tidyData%>%
 str(tidyData)
 tail(tidyData, 20)
 
-# Show data summary to extract mean moisture content (%) for reporting in manuscript
-tidyData %>%
-  dplyr::filter(Treatment == "Fridge", Weeks == "0") %>%
-  summary()
+# Calculate summary data for reporting in manuscript ----
+# Remove NA's so that means aren't influenced by missing values
+no_NA_data <- tidyData %>%
+  drop_na()
+
+data_long <- no_NA_data %>%
+  pivot_longer(cols = Moisture:K,
+               names_to = "Compound",
+               values_to = "Concentration (mg/kg)")
+
+summary.data <- data_long %>%
+  group_by(Treatment, Weeks, Compound) %>%
+  summarise(
+    meanConc = mean(`Concentration (mg/kg)`),
+    sdConc = sd(`Concentration (mg/kg)`),
+    medConc = median(`Concentration (mg/kg)`)
+  )
+
+# Save as csv so it can be easily refered to
+write_csv(summary.data, "data-summaries.csv", col_names = TRUE, na = "")
 
 # Testing for normality ----
 ### Plotting ----
@@ -300,88 +319,36 @@ ggqqplot(tidyData, "K_sqrt", ggtheme = theme_bw()) +
   facet_grid(Weeks~Treatment, labeller = "label_both") +
   labs(title = "K_sqrt")
 
-### Testing natural log transformed data for normality
-normality5 <-tidyData%>%
-  group_by(Treatment,Weeks) %>%
-  shapiro_test(pH_log, NO3_log, NO2_log, NH4_log, K_log)
-data.frame(normality5)
-normality5 %>%
-  group_by(Treatment, Weeks, variable)
-head(normality5)
-
-ggqqplot(tidyData, "pH_log", ggtheme = theme_bw()) +
-  facet_grid(Weeks~Treatment, labeller = "label_both") +
-  labs(title = "pH_log")
-
-
-ggqqplot(tidyData, "NO3_log", ggtheme = theme_bw()) +
-  facet_grid(Weeks~Treatment, labeller = "label_both") +
-  labs(title = "NO3_log")
-
-ggqqplot(tidyData, "NO2_log", ggtheme = theme_bw()) +
-  facet_grid(Weeks~Treatment, labeller = "label_both") +
-  labs(title = "NO2_log")
-
-ggqqplot(tidyData, "NH4_log", ggtheme = theme_bw()) +
-  facet_grid(Weeks~Treatment, labeller = "label_both") +
-  labs(title = "NH4_log")
-
-ggqqplot(tidyData, "K_log", ggtheme = theme_bw()) +
-  facet_grid(Weeks~Treatment, labeller = "label_both") +
-  labs(title = "K_log")
-
-
-
-
-
+# Since transformed data is still not normally distributed, analyses have been carried out on non-transformed data below
 
 
 # Fitting models ----
 ## pH ----
 # Run model using lme
-pH.lme <- lme4::lmer(pH ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+pH.lme <- lme4::lmer(pH ~ Treatment*Weeks + (1|Sample.ID), data = tidyData)
 ph.aov <- Anova(pH.lme, type = 3)
+
+ph.aov
 
 shapiro.test(residuals(pH.lme))
 pH.residuals.plot <- ggqqplot(resid(pH.lme)) + labs(title = "pH residuals")
 pH.residuals.plot
 
-#### On transformed data ----
-# log10 transformed
-pH.lme.log10 <- lme4::lmer(pH_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(pH.lme.log10)
-Anova(pH.lme.log10, type = 3)
-
-shapiro.test(residuals(pH.lme.log10))
-pHlog10.residuals.plot <- ggqqplot(resid(pH.lme.log10)) +
-  labs(title = "pH log10 residuals")
-pHlog10.residuals.plot
-
-# square root transformed 
-pH.lme.sqrt <- lme4::lmer(pH_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(pH.lme.sqrt)
-Anova(pH.lme.sqrt, type = 3)
-
-shapiro.test(residuals(pH.lme.sqrt))
-pHsqrt.residuals.plot <- ggqqplot(resid(pH.lme.sqrt)) + labs(title = "pH square root residuals")
-pHsqrt.residuals.plot
-
-
-
-
-
 ### Post-hoc tests ----
 pH.emm <- emmeans(pH.lme, ~ Weeks|Treatment)
+
 pH.pwc <- emmeans(pH.lme, pairwise ~ Weeks|Treatment)
 pH.pwc
 
-###
 ## NO3 ----
 # Run model using lme
-NO3.lme <- lme4::lmer(NO3 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+NO3.lme <- lme4::lmer(NO3 ~ Treatment*Weeks + (Treatment|Sample.ID) + (Weeks|Sample.ID), data = tidyData)
+
 no3.aov <- Anova(NO3.lme, type = 3)
 
-shapiro.test(residuals(NO3.lme))
+no3.aov
+
+shapiro.test(residuals(NO3.lme))shapiro.test(residuals(NO3.Weekslme))
 NO3.residuals.plot <- ggqqplot(resid(NO3.lme)) + labs(title = "NO3 residuals")
 NO3.residuals.plot
 
@@ -390,37 +357,12 @@ NO3.emm <- emmeans(NO3.lme, ~ Weeks|Treatment)
 NO3.pwc <- emmeans(NO3.emm, pairwise ~ Weeks|Treatment)
 NO3.pwc
 
-###
-
-### On transformed data ----
-# log10 transformed 
-NO3.lme.log10 <- lme4::lmer(NO3_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO3.lme.log10)
-Anova(NO3.lme.log10, type = 3)
-
-shapiro.test(residuals(NO3.lme.log10))
-NO3log10.residuals.plot <- ggqqplot(resid(NO3.lme.log10)) +
-  labs(title = "NO3 log10 residuals")
-NO3log10.residuals.plot
-
-# square root transformed 
-NO3.lme.sqrt <- lme4::lmer(NO3_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO3.lme.sqrt)
-Anova(NO3.lme.sqrt, type = 3)
-
-shapiro.test(residuals(NO3.lme.sqrt))
-NO3sqrt.residuals.plot <- ggqqplot(resid(NO3.lme.sqrt)) + labs(title = "NO3 square root residuals")
-NO3sqrt.residuals.plot
-
-
-
-
-
-
 ## NO2 ----
 # Run model using lme
-NO2.lme <- lme4::lmer(NO2 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+NO2.lme <- lme4::lmer(NO2 ~ Treatment*Weeks + (1|Sample.ID), data = tidyData)
 no2.aov <- Anova(NO2.lme, type = 3)
+
+no2.aov
 
 shapiro.test(residuals(NO2.lme))
 NO2.residuals.plot <- ggqqplot(resid(NO2.lme)) + labs(title = "NO2 residuals")
@@ -429,43 +371,19 @@ NO2.residuals.plot
 ### Post-hoc tests ----
 NO2.emm <- emmeans(NO2.lme, ~ Weeks|Treatment)
 NO2.pwc <- emmeans(NO2.emm, pairwise ~ Weeks|Treatment)
+
 NO2.pwc
 
-###
-
-### On transformed data ----
-# log10 transformed 
-NO2.lme.log10 <- lme4::lmer(NO2_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO2.lme.log10)
-Anova(NO2.lme.log10, type = 3)
-
-shapiro.test(residuals(NO2.lme.log10))
-NO2log10.residuals.plot <- ggqqplot(resid(NO2.lme.log10)) +
-  labs(title = "NO2 log10 residuals")
-NO2log10.residuals.plot
-
-# square root transformed
-NO2.lme.sqrt <- lme4::lmer(NO2_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NO2.lme.sqrt)
-Anova(NO2.lme.sqrt, type = 3)
-
-shapiro.test(residuals(NO2.lme.sqrt))
-NO2sqrt.residuals.plot <- ggqqplot(resid(NO2.lme.sqrt)) + labs(title = "NO2 square root residuals")
-NO2sqrt.residuals.plot
-
-
-
-
-
 ## NH4----
-# Check for  rows with NA's in NH4 column
 # Removing rows where NH4 results are unusable (mistake with the dilution so concentration was outside calibration)
 NH4_data <- tidyData %>%
   filter(!row_number() %in% c(56, 57, 66))
 
 # Run model using lme
-NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1 | Sample.ID), data = NH4_data)
+NH4.lme <- lme4::lmer(NH4 ~ Treatment*Weeks + (1|Sample.ID), data = NH4_data)
 nh4.aov <- Anova(NH4.lme, type = 3)
+
+nh4.aov
 
 shapiro.test(residuals(NH4.lme))
 NH4.residuals.plot <- ggqqplot(resid(NH4.lme)) + labs(title = "NH4 residuals")
@@ -476,35 +394,12 @@ NH4.emm <- emmeans(NH4.lme, ~ Weeks|Treatment)
 NH4.pwc <- emmeans(NH4.emm, pairwise ~ Weeks|Treatment)
 NH4.pwc
 
-###
-
-### On transformed data ----
-# log10 transformed 
-NH4.lme.log10 <- lme4::lmer(NH4_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NH4.lme.log10)
-Anova(NH4.lme.log10, type = 3)
-
-shapiro.test(residuals(NH4.lme.log10))
-NH4log10.residuals.plot <- ggqqplot(resid(NH4.lme.log10)) +
-  labs(title = "NH4 log10 residuals")
-NH4log10.residuals.plot
-
-# square root transformed
-NH4.lme.sqrt <- lme4::lmer(NH4_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(NH4.lme.sqrt)
-Anova(NH4.lme.sqrt, type = 3)
-
-shapiro.test(residuals(NH4.lme.sqrt))
-NH4sqrt.residuals.plot <- ggqqplot(resid(NH4.lme.sqrt)) + labs(title = "NH4 square root residuals")
-NH4sqrt.residuals.plot
-
-
-
 ## K ----
-# Check for  rows with NA's in K column
 # Run model using lme
-K.lme <- lme4::lmer(K ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
+K.lme <- lme4::lmer(K ~ Treatment*Weeks + Treatment*Weeks + (1|Sample.ID), data = tidyData)
 k.aov <- Anova(K.lme, type = 3)
+
+k.aov
 
 shapiro.test(residuals(K.lme))
 K.residuals.plot <- ggqqplot(resid(K.lme)) + labs(title = "K residuals")
@@ -516,59 +411,8 @@ K.pwc <- emmeans(K.emm, pairwise ~ Weeks|Treatment)
 K.pwc
 
 
-###
-
-### On transformed data ----
-# log10 transformed 
-K.lme.log10 <- lme4::lmer(K_log10 ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(K.lme.log10)
-Anova(K.lme.log10, type = 3)
-
-shapiro.test(residuals(K.lme.log10))
-Klog10.residuals.plot <- ggqqplot(resid(K.lme.log10)) +
-  labs(title = "K log10 residuals")
-Klog10.residuals.plot
-
-# square root transformed 
-K.lme.sqrt <- lme4::lmer(K_sqrt ~ Treatment*Weeks + (1 | Sample.ID), data = tidyData)
-summary(K.lme.sqrt)
-Anova(K.lme.sqrt, type = 3)
-
-shapiro.test(residuals(K.lme.sqrt))
-Ksqrt.residuals.plot <- ggqqplot(resid(K.lme.sqrt)) + labs(title = "K square root residuals")
-Ksqrt.residuals.plot
-
-combined.residual.plots <- ggarrange(pH.residuals.plot, pHlog10.residuals.plot, pHsqrt.residuals.plot, 
-                                     NO3.residuals.plot, NO3log10.residuals.plot, NO3sqrt.residuals.plot,
-                                     ncol = 3, nrow = 3)
-
-
-combined.residual.plots1 <- ggarrange(NO2.residuals.plot, NO2log10.residuals.plot, NO2sqrt.residuals.plot,
-                                      NH4.residuals.plot, NH4log10.residuals.plot, NH4sqrt.residuals.plot,
-                                      K.residuals.plot, Klog10.residuals.plot, Ksqrt.residuals.plot,
-                                      ncol = 3, nrow = 3)
-
-combined.residual.plots
-combined.residual.plots1
-
-
-
-
-
-
-
 # Printing all results together to console for easier reading ----
-ph.pwc.out <- data.frame(test = rep("pH", 9), summary(pH.pwc)$contrasts)
-no3.pwc.out <- data.frame(test = rep("NO3", 9), summary(NO3.pwc)$contrasts)
-no2.pwc.out <- data.frame(test = rep("NO2", 9), summary(NO2.pwc)$contrasts)
-nh4.pwc.out <- data.frame(test = rep("NH4", 9), summary(NH4.pwc)$contrasts)
-k.pwc.out <- data.frame(test = rep("K", 9), summary(K.pwc)$contrasts)
-
-combined.pwc <- rbind(ph.pwc.out, no3.pwc.out, no2.pwc.out, nh4.pwc.out, k.pwc.out)
-combined.pwc$p.value <- round(combined.pwc$p.value, 2)
-
-write.csv(combined.pwc, "pwc-output.csv")
-
+## Aov outputs ----
 ph.aov$test <- rep("pH")
 no3.aov$test <- rep("NO3")
 no2.aov$test <- rep("NO2")
@@ -576,13 +420,18 @@ nh4.aov$test <- rep("NH4")
 k.aov$test <- rep("K")
 
 combined.aov <- rbind(ph.aov, no3.aov, no2.aov, nh4.aov, k.aov)
-combined.aov$`Pr(>Chisq)` <- round(combined.aov$`Pr(>Chisq)`, 2)
+combined.aov$`Pr(>Chisq)` <- round(combined.aov$`Pr(>Chisq)`, 3)
 
+## pwc outputs ----
+ph.pwc.out <- data.frame(test = rep("pH", 9), summary(pH.pwc)$contrasts)
+no3.pwc.out <- data.frame(test = rep("NO3", 9), summary(NO3.pwc)$contrasts)
+no2.pwc.out <- data.frame(test = rep("NO2", 9), summary(NO2.pwc)$contrasts)
+nh4.pwc.out <- data.frame(test = rep("NH4", 9), summary(NH4.pwc)$contrasts)
+k.pwc.out <- data.frame(test = rep("K", 9), summary(K.pwc)$contrasts)
+
+combined.pwc <- rbind(ph.pwc.out, no3.pwc.out, no2.pwc.out, nh4.pwc.out, k.pwc.out)
+combined.pwc$p.value <- round(combined.pwc$p.value, 3)
+
+## Saving results to csv ----
 write_csv(combined.aov, "aov-output.csv")
-
-# Saving results to csv ----
-
-
-
-
-
+write.csv(combined.pwc, "pwc-output.csv")
